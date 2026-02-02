@@ -1,0 +1,85 @@
+<div class="max-w-6xl mx-auto px-2 sm:px-3 py-8">
+  <% if notice.present? %>
+    <div class="mb-4 p-4 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-lg">
+      <%= notice %>
+    </div>
+  <% end %>
+
+  <article class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700">
+    <header class="mb-6">
+      <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-4"><%= @article.title %></h1>
+      
+      <% if @article.keywords.present? %>
+        <div class="flex flex-wrap gap-2 mb-4">
+          <% @article.keywords.split(',').each do |keyword| %>
+            <span class="px-3 py-1 bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-200 dark:border dark:border-blue-700 text-sm rounded-full">
+              <%= keyword.strip %>
+            </span>
+          <% end %>
+        </div>
+      <% end %>
+      
+      <p class="text-gray-500 dark:text-gray-400 text-sm">
+        생성일: <%= @article.created_at.strftime("%Y년 %m월 %d일 %H:%M") %>
+      </p>
+    </header>
+
+    <div class="prose prose-lg max-w-none mb-8 article-content">
+      <%= markdown(@article.content) %>
+    </div>
+
+    <% if @article.prompt_used.present? %>
+      <details class="mt-6 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
+        <summary class="cursor-pointer font-semibold text-gray-700 dark:text-gray-300">사용된 프롬프트 보기</summary>
+        <pre class="mt-4 p-4 bg-gray-100 dark:bg-gray-800 dark:text-gray-200 rounded text-sm overflow-x-auto whitespace-pre-wrap"><%= @article.prompt_used %></pre>
+      </details>
+    <% end %>
+  </article>
+
+  <div class="mt-6 flex flex-wrap items-center gap-3">
+    <%# 기사 공유하기: 클릭 시 해당 글 URL 클립보드 복사 %>
+    <button type="button" id="article-share-btn" class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition" title="기사 공유하기 (URL 복사)" data-article-url="<%= article_url(@article) %>">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+    </button>
+    <span id="article-share-toast" class="hidden text-sm text-green-600 dark:text-green-400">URL이 복사되었습니다.</span>
+    <% if user_signed_in? && @article.editable_by?(current_user) %>
+      <%= link_to edit_article_path(@article), class: "inline-flex items-center justify-center w-10 h-10 rounded-lg bg-gray-600 text-white hover:bg-gray-700 transition", title: "수정" do %>
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+      <% end %>
+      <%= link_to @article, method: :delete, data: { turbo_method: :delete, turbo_confirm: "정말 삭제하시겠습니까?" }, class: "inline-flex items-center justify-center w-10 h-10 rounded-lg bg-red-600 text-white hover:bg-red-700 transition", title: "삭제" do %>
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+      <% end %>
+    <% end %>
+    <%= link_to articles_path, class: "inline-flex items-center justify-center px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition" do %>
+      목록으로
+    <% end %>
+  </div>
+</div>
+
+<%# 저장 후 1냥 사용 안내: 확인 누른 후 페이지 확인 %>
+<% if flash[:coin_used] %>
+  <script>
+    (function() { alert("1냥이 사용되었습니다."); })();
+  </script>
+<% end %>
+<script>
+  (function() {
+    var btn = document.getElementById('article-share-btn');
+    var toast = document.getElementById('article-share-toast');
+    var url = btn && btn.getAttribute('data-article-url');
+    if (btn && url) {
+      btn.addEventListener('click', function() {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url).then(function() {
+            if (toast) { toast.classList.remove('hidden'); setTimeout(function() { toast.classList.add('hidden'); }, 2000); }
+          }).catch(function() { fallbackCopy(); });
+        } else {
+          fallbackCopy();
+        }
+        function fallbackCopy() {
+          var ta = document.createElement('textarea'); ta.value = url; ta.setAttribute('readonly', ''); ta.style.position = 'absolute'; ta.style.left = '-9999px'; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); if (toast) { toast.classList.remove('hidden'); setTimeout(function() { toast.classList.add('hidden'); }, 2000); } } catch (e) {} document.body.removeChild(ta);
+        }
+      });
+    }
+  })();
+</script>

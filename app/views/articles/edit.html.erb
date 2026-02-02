@@ -1,0 +1,9 @@
+<div class="max-w-6xl mx-auto px-2 sm:px-3 py-8">
+  <h1 class="text-3xl font-bold text-gray-800 mb-8">기사 수정</h1>
+  
+  <%= render 'form', article: @article %>
+  
+  <div class="mt-6">
+    <%= link_to '취소', @article, class: "text-gray-600 hover:text-gray-800" %>
+  </div>
+</div>

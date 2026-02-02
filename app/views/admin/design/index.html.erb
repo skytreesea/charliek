@@ -1,0 +1,119 @@
+<% content_for :title, "디자인 설정" %>
+
+<div class="max-w-6xl mx-auto px-4 py-8">
+  <div class="mb-6">
+    <h1 class="text-3xl font-bold mb-2" style="color: #433E3F;">디자인 설정</h1>
+    <p class="text-gray-600">색상과 폰트를 요소별로 지정할 수 있습니다.</p>
+  </div>
+
+  <%= form_with url: "/admin/design/update", method: :patch, local: true, class: "bg-white rounded-xl shadow-md border p-6", style: "border-color: #D4A37333;", id: "design-form" do |f| %>
+    
+    <%# 색상 설정 섹션 %>
+    <div class="mb-8">
+      <h2 class="text-2xl font-semibold mb-4" style="color: #433E3F;">색상 설정</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">배경색</label>
+          <input type="color" name="design[theme_bg]" value="<%= @design_settings[:theme_bg] %>" class="w-full h-12 rounded border border-gray-300 cursor-pointer">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">카드 배경색</label>
+          <input type="color" name="design[theme_card]" value="<%= @design_settings[:theme_card] %>" class="w-full h-12 rounded border border-gray-300 cursor-pointer">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">포인트 색상</label>
+          <input type="color" name="design[theme_primary]" value="<%= @design_settings[:theme_primary] %>" class="w-full h-12 rounded border border-gray-300 cursor-pointer">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">텍스트 색상</label>
+          <input type="color" name="design[theme_text]" value="<%= @design_settings[:theme_text] %>" class="w-full h-12 rounded border border-gray-300 cursor-pointer">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">테두리 색상</label>
+          <% 
+            border_val = @design_settings[:theme_border] rescue 'rgba(212, 163, 115, 0.2)'
+            if border_val.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/)
+              r, g, b = border_val.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/).captures
+              border_color = "##{r.to_i.to_s(16).rjust(2, '0')}#{g.to_i.to_s(16).rjust(2, '0')}#{b.to_i.to_s(16).rjust(2, '0')}"
+            elsif border_val.start_with?('#')
+              border_color = border_val
+            else
+              border_color = '#D4A373'
+            end
+          %>
+          <input type="color" name="design[theme_border]" value="<%= border_color %>" class="w-full h-12 rounded border border-gray-300 cursor-pointer">
+          <p class="text-xs text-gray-500 mt-1">투명도 20%가 자동으로 적용됩니다.</p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">호버 배경색</label>
+          <% 
+            hover_val = @design_settings[:theme_hover] rescue 'rgba(212, 163, 115, 0.15)'
+            if hover_val.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/)
+              r, g, b = hover_val.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/).captures
+              hover_color = "##{r.to_i.to_s(16).rjust(2, '0')}#{g.to_i.to_s(16).rjust(2, '0')}#{b.to_i.to_s(16).rjust(2, '0')}"
+            elsif hover_val.start_with?('#')
+              hover_color = hover_val
+            else
+              hover_color = '#D4A373'
+            end
+          %>
+          <input type="color" name="design[theme_hover]" value="<%= hover_color %>" class="w-full h-12 rounded border border-gray-300 cursor-pointer">
+          <p class="text-xs text-gray-500 mt-1">투명도 15%가 자동으로 적용됩니다.</p>
+        </div>
+      </div>
+    </div>
+
+    <%# 폰트 설정 섹션 %>
+    <div class="mb-8">
+      <h2 class="text-2xl font-semibold mb-4" style="color: #433E3F;">폰트 설정</h2>
+      <div class="space-y-4">
+        <% font_elements = [
+          { key: 'heading', label: '제목 (h1, h2, h3 등)', current: @design_settings[:font_heading] },
+          { key: 'body', label: '본문 텍스트', current: @design_settings[:font_body] },
+          { key: 'button', label: '버튼 텍스트', current: @design_settings[:font_button] },
+          { key: 'link', label: '링크 텍스트', current: @design_settings[:font_link] },
+          { key: 'nav', label: '네비게이션 메뉴', current: @design_settings[:font_nav] },
+          { key: 'code', label: '코드/고정폭 텍스트', current: @design_settings[:font_code] },
+          { key: 'footer', label: '푸터 텍스트', current: @design_settings[:font_footer] }
+        ] %>
+        
+        <% font_elements.each do |element| %>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2"><%= element[:label] %></label>
+            <select name="design[font_<%= element[:key] %>]" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2" style="focus:border-color: #D4A373;" onfocus="this.style.borderColor='#D4A373';" onblur="this.style.borderColor='#d1d5db';">
+              <% current_font = element[:current] %>
+              <% is_system_font = current_font.include?('system-ui') || (@available_fonts.none? { |f| current_font.include?(f[:name]) } && element[:key] != 'code') %>
+              <% is_courier = element[:key] == 'code' && current_font.include?('Courier New') %>
+              <% @available_fonts.each do |font| %>
+                <% font_value = font[:value] %>
+                <% selected = current_font.include?(font[:name]) rescue false %>
+                <option value="<%= font_value %>" <%= 'selected' if selected %> data-font-url="<%= font[:url] %>"><%= font[:name] %></option>
+              <% end %>
+              <% if element[:key] == 'code' %>
+                <option value="'Courier New', monospace" <%= 'selected' if is_courier %>>Courier New (기본)</option>
+              <% end %>
+              <option value="system-ui, sans-serif" <%= 'selected' if is_system_font && !is_courier %>>시스템 기본 폰트</option>
+            </select>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <%# 적용 버튼 %>
+    <div class="flex justify-end gap-3 mt-6">
+      <%= link_to "취소", "/admin/users", class: "px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition" %>
+      <button type="submit" class="px-6 py-3 text-white rounded-lg transition font-semibold" style="background-color: #D4A373;" onmouseover="this.style.backgroundColor='#C49363';" onmouseout="this.style.backgroundColor='#D4A373';">
+        적용하기
+      </button>
+    </div>
+  <% end %>
+</div>
+
+<script>
+  // 색상 미리보기 업데이트
+  document.querySelectorAll('input[type="color"]').forEach(input => {
+    input.addEventListener('change', function() {
+      // 미리보기는 나중에 구현 가능
+    });
+  });
+</script>

@@ -1,0 +1,40 @@
+<div class="max-w-6xl mx-auto px-2 sm:px-3 py-8">
+  <div class="mb-4 p-4 bg-blue-50 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-lg border border-blue-200 dark:border-blue-800">
+    <p class="font-semibold">제목 선택</p>
+    <p class="text-sm mt-1">생성된 제목 중 하나를 선택해주세요.</p>
+  </div>
+
+  <% if @article.errors.any? %>
+    <div class="mb-4 p-4 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg">
+      <h2 class="font-bold mb-2"><%= pluralize(@article.errors.count, "개의 오류") %>가 있습니다:</h2>
+      <ul class="list-disc list-inside">
+        <% @article.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%= form_with scope: :article, url: articles_path, method: :post, local: true, class: "space-y-6" do |f| %>
+    <%= hidden_field_tag :selected_title, "1" %>
+    <%= f.hidden_field :keywords, value: @article.keywords %>
+    <%= f.hidden_field :writing_style, value: @article.writing_style %>
+
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700">
+      <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">생성된 제목</h2>
+      <div class="space-y-3" data-controller="title-selection">
+        <% @titles.each_with_index do |title, index| %>
+          <label class="flex items-center p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg cursor-pointer hover:border-blue-500 dark:hover:border-blue-400 transition title-option <%= 'border-blue-600 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/30' if index == 0 %>">
+            <%= radio_button_tag "article[selected_title]", title, index == 0, class: "mr-3 title-radio" %>
+            <span class="text-gray-800 dark:text-gray-200 font-medium"><%= title %></span>
+          </label>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="flex gap-4">
+      <%= f.submit "선택한 제목으로 기사 생성", class: "px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition cursor-pointer" %>
+      <%= link_to "새 기사 작성으로 돌아가기", new_article_path, class: "px-6 py-3 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition" %>
+    </div>
+  <% end %>
+</div>

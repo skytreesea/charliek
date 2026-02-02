@@ -1,0 +1,28 @@
+#!/bin/sh
+set -e
+
+# WORKDIR을 명시적으로 설정 (상대 경로 문제 방지)
+cd /rails || exit 1
+
+# Enable jemalloc for reduced memory usage and latency.
+if [ -z "${LD_PRELOAD+x}" ]; then
+    LD_PRELOAD=$(find /usr/lib -name libjemalloc.so.2 -print -quit)
+    export LD_PRELOAD
+fi
+
+# Prepare database (에러가 발생해도 서버는 시작되도록 함)
+# docker-entrypoint에서 이미 처리하지만, 이중 안전장치
+/rails/bin/rails db:prepare || {
+  echo "Warning: db:prepare failed, but continuing to start server..."
+  echo "This might be expected if the database is already set up."
+}
+
+# Run litestream if BUCKET_NAME is set, otherwise run rails server directly
+# 포트는 puma.rb에서 설정되므로 여기서는 지정하지 않음
+# puma.rb에서 이미 bind "tcp://0.0.0.0:#{ENV.fetch("PORT", 8080)}"로 설정됨
+# 절대 경로 사용으로 Exit Code 127 방지
+if [ -n "$BUCKET_NAME" ]; then
+  exec /rails/bin/rake litestream:run -- /rails/bin/rails server
+else
+  exec /rails/bin/rails server
+fi

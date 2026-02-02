@@ -1,0 +1,20 @@
+<div class="max-w-6xl mx-auto px-4 py-8 w-full overflow-x-hidden">
+  <%# 메인 이미지 섹션 %>
+  <% if @home_image.present? %>
+    <div class="mb-8 rounded-xl overflow-hidden shadow-md border" style="border-color: var(--theme-border);">
+      <%# variant 객체인 경우 url_for 사용, URL 문자열인 경우 그대로 사용 %>
+      <% if @home_image.is_a?(ActiveStorage::Variant) %>
+        <%= image_tag @home_image, alt: "메인 이미지", class: "w-full h-auto object-cover", style: "max-height: 500px; width: 100%; object-fit: cover; display: block;", loading: "lazy", onerror: "this.style.display='none'; console.error('이미지를 로드할 수 없습니다.');" %>
+      <% else %>
+        <img src="<%= @home_image %>" alt="메인 이미지" class="w-full h-auto object-cover" style="max-height: 500px; width: 100%; object-fit: cover; display: block;" loading="lazy" onerror="this.style.display='none'; console.error('이미지를 로드할 수 없습니다: <%= @home_image %>');">
+      <% end %>
+    </div>
+  <% end %>
+  
+  <%# 메인 문구 섹션 %>
+  <div class="bg-white rounded-xl shadow-md border p-6 sm:p-8 mb-8" style="border-color: var(--theme-border);">
+    <div class="text-lg sm:text-xl leading-relaxed" style="color: var(--theme-text); font-family: var(--font-body);">
+      <%= simple_format(@home_text) %>
+    </div>
+  </div>
+</div>

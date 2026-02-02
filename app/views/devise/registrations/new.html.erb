@@ -1,0 +1,82 @@
+<div class="max-w-md mx-auto px-2 sm:px-4 py-6 sm:py-12">
+  <div class="bg-white rounded-xl shadow-lg border p-4 sm:p-8" style="border-color: #D4A37333;">
+    <h2 class="text-2xl sm:text-3xl font-bold mb-2 text-center" style="color: #433E3F;">회원가입</h2>
+    <p class="text-gray-600 text-sm text-center mb-6 sm:mb-8">새로운 계정을 만들어주세요</p>
+
+    <%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { class: "space-y-4 sm:space-y-6" }) do |f| %>
+      <%= render "devise/shared/error_messages", resource: resource %>
+
+      <div>
+        <%= f.label :email, "이메일 주소", class: "block text-sm font-semibold text-gray-700 mb-2" %>
+        <div class="text-xs text-gray-500 mb-2 p-2 rounded" style="background-color: #FAF9F6;">
+          <p>📧 <strong>필수 정보:</strong> 로그인에 사용할 이메일 주소를 입력해주세요</p>
+          <p class="mt-1">예: yourname@example.com</p>
+        </div>
+        <%= f.email_field :email, autofocus: true, autocomplete: "email",
+            class: "w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 transition text-base",
+            style: "focus:ring-color: #D4A373; focus:border-color: #D4A373;",
+            onfocus: "this.style.borderColor='#D4A373'; this.style.boxShadow='0 0 0 2px rgba(212, 163, 115, 0.2)';",
+            onblur: "this.style.borderColor='#d1d5db'; this.style.boxShadow='none';",
+            placeholder: "example@email.com" %>
+      </div>
+
+      <div>
+        <%= f.label :password, "비밀번호", class: "block text-sm font-semibold text-gray-700 mb-2" %>
+        <div class="text-xs text-gray-500 mb-2 p-2 rounded" style="background-color: #FAF9F6;">
+          <p>🔒 <strong>필수 정보:</strong> 보안을 위해 6자 이상의 비밀번호를 입력해주세요</p>
+          <p class="mt-1">💡 <strong>팁:</strong> 영문, 숫자, 특수문자를 조합하면 더 안전합니다</p>
+        </div>
+        <%= f.password_field :password, autocomplete: "new-password",
+            class: "w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 transition text-base",
+            style: "focus:ring-color: #D4A373; focus:border-color: #D4A373;",
+            onfocus: "this.style.borderColor='#D4A373'; this.style.boxShadow='0 0 0 2px rgba(212, 163, 115, 0.2)';",
+            onblur: "this.style.borderColor='#d1d5db'; this.style.boxShadow='none';",
+            placeholder: "비밀번호 입력 (6자 이상)" %>
+        <% if @minimum_password_length %>
+          <p class="mt-1 text-xs text-gray-500">최소 <%= @minimum_password_length %>자 이상</p>
+        <% end %>
+      </div>
+
+      <div>
+        <%= f.label :password_confirmation, "비밀번호 확인", class: "block text-sm font-semibold text-gray-700 mb-2" %>
+        <div class="text-xs text-gray-500 mb-2 p-2 rounded" style="background-color: #FAF9F6;">
+          <p>✓ <strong>필수 정보:</strong> 위에서 입력한 비밀번호를 다시 한번 입력해주세요</p>
+        </div>
+        <%= f.password_field :password_confirmation, autocomplete: "new-password",
+            class: "w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 transition text-base",
+            style: "focus:ring-color: #D4A373; focus:border-color: #D4A373;",
+            onfocus: "this.style.borderColor='#D4A373'; this.style.boxShadow='0 0 0 2px rgba(212, 163, 115, 0.2)';",
+            onblur: "this.style.borderColor='#d1d5db'; this.style.boxShadow='none';",
+            placeholder: "비밀번호 다시 입력" %>
+      </div>
+
+      <div>
+        <%= f.label :nickname, "별명 (선택사항)", class: "block text-sm font-semibold text-gray-700 mb-2" %>
+        <div class="text-xs text-gray-500 mb-2 p-2 rounded" style="background-color: #FAF9F6;">
+          <p>⭐ <strong>선택 정보:</strong> 게시판에서 표시될 별명을 입력해주세요</p>
+          <p class="mt-1">별명을 입력하지 않으면 이메일이 가려져서 표시됩니다 (예: sk***)</p>
+        </div>
+        <%= f.text_field :nickname, autocomplete: "nickname",
+            class: "w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 transition text-base",
+            style: "focus:ring-color: #D4A373; focus:border-color: #D4A373;",
+            onfocus: "this.style.borderColor='#D4A373'; this.style.boxShadow='0 0 0 2px rgba(212, 163, 115, 0.2)';",
+            onblur: "this.style.borderColor='#d1d5db'; this.style.boxShadow='none';",
+            placeholder: "별명 입력 (선택사항)" %>
+      </div>
+
+      <div>
+        <%= f.submit "회원가입", class: "w-full py-3 bg-slate-700 text-white font-bold rounded-lg text-base", style: "background-color: #475569; color: white; width: 100%; padding: 0.75rem; border-radius: 0.5rem; font-weight: 700; font-size: 1rem; border: none; cursor: pointer; min-height: 44px;" %>
+      </div>
+    <% end %>
+
+    <div class="mt-6 pt-6 border-t border-gray-200">
+      <div class="text-center">
+        <p class="text-sm text-gray-600 mb-4">이미 계정이 있으신가요?</p>
+        <% login_link_style = "color: #16A34A;" %>
+        <% login_link_hover_in = "this.style.color='#14532D';" %>
+        <% login_link_hover_out = "this.style.color='#16A34A';" %>
+        <%= link_to "로그인하기", "/users/sign_in", style: login_link_style, class: "font-semibold text-sm", onmouseover: login_link_hover_in, onmouseout: login_link_hover_out %>
+      </div>
+    </div>
+  </div>
+</div>

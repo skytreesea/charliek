@@ -1,0 +1,65 @@
+<div class="max-w-md mx-auto px-2 sm:px-4 py-6 sm:py-12">
+  <%# 내 코인 표시 + 구매하기 %>
+  <div class="bg-white rounded-xl shadow-lg border p-4 sm:p-6 mb-4 sm:mb-6" style="border-color: #D4A37333;">
+    <h2 class="text-lg sm:text-xl font-bold mb-3" style="color: #433E3F;">내 코인</h2>
+    <div class="flex items-center justify-between flex-wrap gap-3">
+      <p class="text-base sm:text-lg font-semibold flex items-center gap-2" style="color: #433E3F;">
+        <span class="text-2xl" title="냥 (코인)">🪙</span>
+        <span><%= current_user.coins_display %>냥</span>
+        <% if current_user.super_admin? %>
+          <span class="text-sm font-normal text-gray-500">(무한)</span>
+        <% end %>
+      </p>
+      <%= link_to "코인 구매하기", coins_path, class: "inline-flex items-center justify-center px-4 py-2 rounded-lg font-semibold text-sm transition", style: "background-color: #D4A373; color: white;", onmouseover: "this.style.backgroundColor='#C4A373';", onmouseout: "this.style.backgroundColor='#D4A373';" %>
+    </div>
+    <p class="text-gray-500 text-xs mt-2">마이뮤즈·기사생성기 이용 시 1냥이 차감됩니다.</p>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-lg border p-4 sm:p-8" style="border-color: #D4A37333;">
+    <h2 class="text-2xl sm:text-3xl font-bold mb-2 text-center" style="color: #433E3F;">별명 수정</h2>
+    <p class="text-gray-600 text-sm text-center mb-6 sm:mb-8">게시판에 표시될 별명을 설정하세요</p>
+
+    <%= form_with model: current_user, url: "/nickname", method: :patch, html: { class: "space-y-4 sm:space-y-6", id: "nickname-form" } do |f| %>
+      <% if current_user.errors.any? %>
+        <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+          <%= current_user.errors.full_messages.join(", ") %>
+        </div>
+      <% end %>
+
+      <div>
+        <%= f.label :nickname, "별명", class: "block text-sm font-semibold text-gray-700 mb-2" %>
+        <div class="text-xs text-gray-500 mb-2 p-2 rounded" style="background-color: #FAF9F6;">
+          <p>⭐ <strong>선택 정보:</strong> 게시판에서 표시될 별명을 입력해주세요</p>
+          <p class="mt-1">별명을 입력하지 않으면 이메일이 가려져서 표시됩니다 (예: sk***)</p>
+        </div>
+        <%= f.text_field :nickname, autofocus: true,
+            class: "w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 transition text-base",
+            style: "focus:ring-color: #D4A373; focus:border-color: #D4A373;",
+            onfocus: "this.style.borderColor='#D4A373'; this.style.boxShadow='0 0 0 2px rgba(212, 163, 115, 0.2)';",
+            onblur: "this.style.borderColor='#d1d5db'; this.style.boxShadow='none';",
+            placeholder: "별명 입력 (선택사항)", value: current_user.nickname, id: "user_nickname" %>
+      </div>
+
+      <div class="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
+        <%= link_to "취소", "/posts", class: "px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition text-center", style: "min-height: 44px; display: flex; align-items: center; justify-content: center;" %>
+        <%= f.submit "확인", class: "px-6 py-3 bg-slate-700 text-white font-semibold rounded-lg text-base", style: "background-color: #475569; color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 600; font-size: 1rem; border: none; cursor: pointer; min-height: 44px;" %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('nickname-form');
+    const nicknameField = document.getElementById('user_nickname');
+    
+    if (form && nicknameField) {
+      nicknameField.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          form.requestSubmit();
+        }
+      });
+    }
+  });
+</script>

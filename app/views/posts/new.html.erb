@@ -1,0 +1,24 @@
+<% content_for :title, "새 글 작성" %>
+
+<div class="max-w-2xl mx-auto px-4 py-16">
+  <%# 상단 헤더 섹션 %>
+  <div class="mb-10">
+    <h1 class="text-3xl font-extrabold text-gray-900 mb-2">새 에세이 작성</h1>
+    <p class="text-gray-500">당신의 생각이나 문화 이야기를 자유롭게 기록해 보세요.</p>
+  </div>
+
+  <%# 폼 영역 (이미 꾸며둔 _form.html.erb가 여기서 렌더링됩니다) %>
+  <div class="bg-white p-8 border border-gray-200 rounded-2xl shadow-sm">
+    <%= render "form", post: @post %>
+  </div>
+
+  <%# 하단 네비게이션 %>
+  <div class="mt-8 text-center">
+    <%= link_to "/posts", class: "inline-flex items-center text-sm text-gray-400 hover:text-gray-700 transition" do %>
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+      </svg>
+      목록으로 돌아가기
+    <% end %>
+  </div>
+</div>

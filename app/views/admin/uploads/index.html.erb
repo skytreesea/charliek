@@ -1,0 +1,351 @@
+<% content_for :title, "이미지 업로드" %>
+
+<div class="max-w-4xl mx-auto px-4 py-8">
+  <div class="mb-6">
+    <h1 class="text-3xl font-bold mb-2" style="color: #433E3F;">이미지 업로드</h1>
+    <p class="text-gray-600">Tigris에 이미지를 업로드하고 바로 사용할 수 있는 URL을 복사하세요.</p>
+  </div>
+
+  <%# 업로드 영역 %>
+  <div class="bg-white rounded-xl shadow-md border p-6 mb-8" style="border-color: #D4A37333;">
+    <h2 class="text-xl font-semibold mb-4" style="color: #433E3F;">새 이미지 업로드</h2>
+    
+    <div id="upload-area" class="border-2 border-dashed rounded-lg p-8 text-center transition" style="border-color: #D4A37366;" onmouseover="this.style.borderColor='#D4A373';" onmouseout="this.style.borderColor='#D4A37366';">
+      <input type="file" id="file-input" accept="image/*" class="hidden" multiple>
+      <label for="file-input" class="cursor-pointer">
+        <svg class="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+        </svg>
+        <p class="text-lg font-medium text-gray-700 mb-2">클릭하거나 드래그하여 이미지 업로드</p>
+        <p class="text-sm text-gray-500">JPG, PNG, GIF, WEBP (최대 10MB)</p>
+      </label>
+    </div>
+
+    <div id="upload-progress" class="hidden mt-4">
+      <div class="bg-gray-200 rounded-full h-2">
+        <div id="progress-bar" class="bg-blue-600 h-2 rounded-full transition-all" style="width: 0%"></div>
+      </div>
+      <p class="text-sm text-gray-600 mt-2 text-center">업로드 중...</p>
+    </div>
+
+    <div id="upload-result" class="hidden mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
+      <h3 class="font-semibold text-green-800 mb-2">✅ 업로드 완료!</h3>
+      <div class="space-y-3">
+        <div id="compression-info" class="text-xs text-green-700"></div>
+        <div>
+          <div class="flex gap-2">
+            <button onclick="copyUrl()" class="px-4 py-2 bg-blue-600 text-white rounded text-sm font-semibold hover:bg-blue-700 transition">
+              url
+            </button>
+            <button onclick="copyImgTag()" class="px-4 py-2 bg-green-600 text-white rounded text-sm font-semibold hover:bg-green-700 transition">
+              img
+            </button>
+            <button onclick="deleteUploadedImage()" class="px-4 py-2 bg-red-600 text-white rounded text-sm font-semibold hover:bg-red-700 transition">
+              삭제
+            </button>
+          </div>
+        </div>
+        <div id="image-preview" class="mt-3"></div>
+      </div>
+    </div>
+
+    <div id="upload-error" class="hidden mt-4 p-4 bg-red-50 rounded-lg border border-red-200">
+      <p class="text-red-800 text-sm"></p>
+    </div>
+  </div>
+
+  <%# 최근 업로드 목록 %>
+  <div class="bg-white rounded-xl shadow-md border p-6" style="border-color: #D4A37333;">
+    <h2 class="text-xl font-semibold mb-4" style="color: #433E3F;">최근 업로드된 이미지</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+      <% @uploads.each do |blob| %>
+        <% if blob.content_type&.start_with?('image/') %>
+          <% image_url = request.base_url + rails_blob_path(blob, only_path: true) %>
+          <div class="border rounded-lg overflow-hidden hover:shadow-md transition" style="border-color: #D4A37333;">
+            <div class="aspect-square bg-gray-100 flex items-center justify-center">
+              <%# 이미 WebP로 최적화된 이미지 표시 (800px, 품질 50) %>
+              <img src="<%= image_url %>" alt="<%= blob.filename %>" class="w-full h-full object-cover" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\'text-gray-400 text-xs p-2\'>이미지 로드 실패</div>'">
+            </div>
+            <div class="p-2">
+              <p class="text-xs text-gray-600 truncate" title="<%= blob.filename %>"><%= blob.filename %></p>
+              <p class="text-xs text-gray-400 mt-1"><%= number_to_human_size(blob.byte_size) %></p>
+              <div class="flex flex-col gap-1 mt-2">
+                <div class="flex gap-1">
+                  <button onclick="copyUrlById('<%= blob.id %>', '<%= image_url %>')" class="flex-1 px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition">
+                    url
+                  </button>
+                  <button onclick="copyImgTagById('<%= blob.id %>', '<%= image_url %>')" class="flex-1 px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition">
+                    img
+                  </button>
+                </div>
+                <% if current_user&.super_admin? %>
+                  <%= button_to "삭제", admin_upload_path(blob.id), method: :delete, 
+                      class: "w-full px-2 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700 transition", 
+                      data: { confirm: "정말 이 이미지를 삭제하시겠습니까?" },
+                      form: { class: "inline" } %>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+    <% if @uploads.empty? %>
+      <p class="text-gray-500 text-center py-8">아직 업로드된 이미지가 없습니다.</p>
+    <% end %>
+  </div>
+</div>
+
+<script>
+  const fileInput = document.getElementById('file-input');
+  const uploadArea = document.getElementById('upload-area');
+  const uploadProgress = document.getElementById('upload-progress');
+  const progressBar = document.getElementById('progress-bar');
+  const uploadResult = document.getElementById('upload-result');
+  const uploadError = document.getElementById('upload-error');
+  const imagePreview = document.getElementById('image-preview');
+  let currentImageUrl = ''; // 현재 업로드된 이미지 URL 저장
+  let currentImageId = null; // 현재 업로드된 이미지 ID 저장
+
+  // 드래그 앤 드롭
+  uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.style.borderColor = '#D4A373';
+    uploadArea.style.backgroundColor = '#FAF9F6';
+  });
+
+  uploadArea.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    uploadArea.style.borderColor = '#D4A37366';
+    uploadArea.style.backgroundColor = 'transparent';
+  });
+
+  uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.style.borderColor = '#D4A37366';
+    uploadArea.style.backgroundColor = 'transparent';
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      handleFiles(files);
+    }
+  });
+
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+      handleFiles(e.target.files);
+    }
+  });
+
+  function handleFiles(files) {
+    const file = files[0];
+    
+    // 파일 크기 확인 (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      showError('파일 크기는 최대 10MB까지 업로드 가능합니다.');
+      return;
+    }
+
+    // 이미지 파일 확인
+    if (!file.type.startsWith('image/')) {
+      showError('이미지 파일만 업로드 가능합니다.');
+      return;
+    }
+
+    uploadFile(file);
+  }
+
+  function uploadFile(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    // UI 초기화
+    uploadResult.classList.add('hidden');
+    uploadError.classList.add('hidden');
+    uploadProgress.classList.remove('hidden');
+    progressBar.style.width = '0%';
+
+    // 업로드 진행률 시뮬레이션
+    let progress = 0;
+    const progressInterval = setInterval(() => {
+      progress += 10;
+      if (progress <= 90) {
+        progressBar.style.width = progress + '%';
+      }
+    }, 100);
+
+    fetch('/admin/uploads', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      clearInterval(progressInterval);
+      progressBar.style.width = '100%';
+
+      if (data.success) {
+        setTimeout(() => {
+          uploadProgress.classList.add('hidden');
+          currentImageUrl = data.url; // 현재 이미지 URL 저장
+          
+          // 압축 정보 표시
+          const compressionInfo = document.getElementById('compression-info');
+          if (data.compressed && data.original_size) {
+            const originalMB = (data.original_size / (1024 * 1024)).toFixed(2);
+            const compressedMB = (data.size / (1024 * 1024)).toFixed(2);
+            const savedPercent = ((1 - data.size / data.original_size) * 100).toFixed(1);
+            compressionInfo.innerHTML = `📦 이미지 최적화됨: ${originalMB}MB → ${compressedMB}MB (${savedPercent}% 감소)`;
+          } else {
+            compressionInfo.innerHTML = '';
+          }
+          
+          // 이미지 미리보기
+          imagePreview.innerHTML = `
+            <div class="mt-3">
+              <label class="block text-xs font-medium text-gray-700 mb-1">미리보기:</label>
+              <img src="${data.url}" alt="${data.filename}" class="max-w-full h-auto rounded-lg border" style="max-height: 300px; border-color: #D4A37333;">
+            </div>
+          `;
+          
+          uploadResult.classList.remove('hidden');
+          
+          // 파일 입력 초기화
+          fileInput.value = '';
+          
+          // 페이지 새로고침 (최근 업로드 목록 업데이트)
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
+        }, 500);
+      } else {
+        showError(data.error || '업로드에 실패했습니다.');
+      }
+    })
+    .catch(error => {
+      clearInterval(progressInterval);
+      uploadProgress.classList.add('hidden');
+      showError('업로드 중 오류가 발생했습니다: ' + error.message);
+    });
+  }
+
+  function showError(message) {
+    uploadError.querySelector('p').textContent = message;
+    uploadError.classList.remove('hidden');
+    uploadProgress.classList.add('hidden');
+  }
+
+  // URL 복사 (업로드 완료 후)
+  function copyUrl() {
+    if (!currentImageUrl) return;
+    
+    copyToClipboard(currentImageUrl);
+    
+    // 복사 확인
+    const button = event.target;
+    const originalText = button.textContent;
+    button.textContent = '복사됨!';
+    button.style.backgroundColor = '#10b981';
+    
+    setTimeout(() => {
+      button.textContent = originalText;
+      button.style.backgroundColor = '#2563eb';
+    }, 2000);
+  }
+
+  // img 태그 복사 (업로드 완료 후)
+  function copyImgTag() {
+    if (!currentImageUrl) return;
+    
+    const imgTag = `<img src="${currentImageUrl}">`;
+    copyToClipboard(imgTag);
+    
+    // 복사 확인
+    const button = event.target;
+    const originalText = button.textContent;
+    button.textContent = '복사됨!';
+    button.style.backgroundColor = '#10b981';
+    
+    setTimeout(() => {
+      button.textContent = originalText;
+      button.style.backgroundColor = '#16a34a';
+    }, 2000);
+  }
+
+  // 업로드 완료 후 이미지 삭제
+  function deleteUploadedImage() {
+    if (!confirm('정말 이 이미지를 삭제하시겠습니까?')) return;
+    
+    // 업로드 결과 숨기기
+    uploadResult.classList.add('hidden');
+    currentImageUrl = '';
+    currentImageId = null;
+  }
+
+  // URL 복사 (최근 업로드 목록)
+  function copyUrlById(blobId, imageUrl) {
+    copyToClipboard(imageUrl);
+    
+    // 복사 확인
+    const button = event.target;
+    const originalText = button.textContent;
+    button.textContent = '복사됨!';
+    button.style.backgroundColor = '#10b981';
+    
+    setTimeout(() => {
+      button.textContent = originalText;
+      button.style.backgroundColor = '#2563eb';
+    }, 2000);
+  }
+
+  // img 태그 복사 (최근 업로드 목록)
+  function copyImgTagById(blobId, imageUrl) {
+    const imgTag = `<img src="${imageUrl}">`;
+    copyToClipboard(imgTag);
+    
+    // 복사 확인
+    const button = event.target;
+    const originalText = button.textContent;
+    button.textContent = '복사됨!';
+    button.style.backgroundColor = '#10b981';
+    
+    setTimeout(() => {
+      button.textContent = originalText;
+      button.style.backgroundColor = '#16a34a';
+    }, 2000);
+  }
+
+  // 클립보드에 복사하는 헬퍼 함수
+  function copyToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).catch(err => {
+        console.error('클립보드 복사 실패:', err);
+        fallbackCopyTextToClipboard(text);
+      });
+    } else {
+      fallbackCopyTextToClipboard(text);
+    }
+  }
+
+  // 구형 브라우저 지원
+  function fallbackCopyTextToClipboard(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.position = "fixed";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+      document.execCommand('copy');
+    } catch (err) {
+      console.error('클립보드 복사 실패:', err);
+    }
+    
+    document.body.removeChild(textArea);
+  }
+</script>

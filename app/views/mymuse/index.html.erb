@@ -1,0 +1,73 @@
+<div class="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+  <div class="mb-6 text-center">
+    <h1 class="text-2xl sm:text-3xl font-bold mb-1" style="color: #433E3F;">
+      마이뮤즈
+    </h1>
+    <p class="text-gray-600 text-xs sm:text-sm">코드 진행 추천 및 가사 악보 생성 도구</p>
+  </div>
+
+  <%# 사용법 안내 %>
+  <div class="bg-blue-50 rounded-lg border p-4 mb-6" style="border-color: #D4A37333;">
+    <div class="space-y-1 text-sm" style="color: #433E3F;">
+      <p>1. 원하는 분위기를 선택하세요</p>
+      <p>2. 가사를 입력하세요 (각 줄은 한 마디로 간주됩니다)</p>
+      <p>3. 생성하기 버튼을 클릭하면 코드 진행과 악보가 표시됩니다</p>
+      <p>4. 재생 버튼을 눌러 코드 진행을 들을 수 있습니다</p>
+      <p>5. BPM과 연주 설정을 조절할 수 있습니다</p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-lg border p-6 mb-6" style="border-color: #D4A37333;">
+    <%= form_with url: mymuse_create_path, method: :post, local: false do |f| %>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <%# 왼쪽: 분위기 선택 %>
+        <div class="flex flex-col">
+          <label for="mood" class="block text-sm font-semibold mb-2" style="color: #433E3F;">
+            분위기 선택
+          </label>
+          <select name="mood" id="mood" class="w-full px-4 py-2 rounded-lg border bg-white text-gray-800 border-gray-300 focus:border-D4A373 focus:ring-2 focus:ring-D4A373/20 outline-none transition">
+            <% ProgressionService.available_moods.each do |mood| %>
+              <% 
+                # 각 기분의 첫 번째 코드 진행 가져오기
+                first_progression = Composition::MOOD_PROGRESSIONS[mood]&.first
+              %>
+              <option value="<%= mood %>" <%= 'selected' if mood == '기쁨' %> data-progression="<%= first_progression&.join(' - ') || '' %>">
+                <%= mood %>
+              </option>
+            <% end %>
+          </select>
+        </div>
+
+        <%# 오른쪽: 가사 입력 %>
+        <div class="flex flex-col">
+          <label for="lyrics" class="block text-sm font-semibold mb-2" style="color: #433E3F;">
+            가사 입력
+          </label>
+          <textarea 
+            name="lyrics" 
+            id="lyrics" 
+            rows="4" 
+            placeholder="가사를 입력하세요...&#10;각 줄은 한 마디로 간주됩니다."
+            class="w-full px-4 py-3 rounded-lg border bg-white text-gray-800 border-gray-300 focus:border-D4A373 focus:ring-2 focus:ring-D4A373/20 outline-none transition resize-none font-mono text-sm"
+            style="min-height: 100px;"
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="flex justify-center mt-6">
+        <button 
+          type="submit" 
+          class="px-8 py-3 rounded-lg font-semibold text-lg transition-all transform hover:scale-105 active:scale-95 shadow-lg text-white"
+          style="background-color: #D4A373;"
+        >
+          ⚡ 생성하기
+        </button>
+      </div>
+    <% end %>
+  </div>
+
+  <div id="chord_result" class="min-h-[200px]">
+    <%# 결과가 여기에 표시됩니다 %>
+  </div>
+</div>
+

@@ -1,0 +1,15 @@
+ko:
+  activerecord:
+    errors:
+      models:
+        user:
+          attributes:
+            email:
+              blank: "이메일을 입력해주세요"
+              taken: "이미 사용 중인 이메일입니다"
+              invalid: "올바른 이메일 형식이 아닙니다"
+            password:
+              blank: "비밀번호를 입력해주세요"
+              too_short: "비밀번호는 최소 %{count}자 이상이어야 합니다"
+              confirmation:
+                confirmation: "비밀번호가 일치하지 않습니다"

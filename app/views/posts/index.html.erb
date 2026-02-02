@@ -1,0 +1,355 @@
+<style>
+  .post-title-mobile {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .post-title-container {
+    flex: 1 1 auto;
+    max-width: 100%;
+  }
+  @media (min-width: 768px) {
+    .post-title-mobile {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      line-height: 1.4;
+      max-height: 2.8em;
+      word-break: break-word;
+      white-space: normal;
+    }
+    .post-title-container {
+      flex: 0 1 50%;
+      max-width: 50%;
+    }
+  }
+</style>
+
+<div class="max-w-5xl mx-auto px-1 sm:px-4 py-4 sm:py-8 w-full overflow-x-hidden">
+  <%# 헤더 영역 %>
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-8">
+    <h1 class="text-2xl sm:text-3xl font-bold" style="color: #433E3F;"><%= @category || "게시판" %></h1>
+    <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 flex-wrap">
+      <%# Google 번역 버튼 %>
+      <div class="flex flex-col gap-1">
+        <div id="google_translate_element" class="custom-google-translate"></div>
+        <p class="text-xs text-gray-500 italic">You can choose your language here</p>
+      </div>
+      <%= link_to '글쓰기', "/posts/new?category=#{CGI.escape(@category.to_s)}", class: "px-3 py-1.5 sm:px-4 bg-slate-700 text-white rounded-lg font-semibold text-sm", style: "background-color: #475569; color: white; padding: 0.375rem 0.75rem; border-radius: 0.5rem; font-weight: 600; font-size: 0.875rem; display: inline-block; text-decoration: none;" %>
+    </div>
+  </div>
+
+  <%# 게시판 컨테이너 %>
+  <div class="bg-white rounded-xl shadow-md overflow-hidden border w-full" style="border-color: #D4A37333;">
+    <%# 게시글 리스트 %>
+    <% if @posts.any? %>
+      <% @posts.each_with_index do |post, index| %>
+        <% is_new = post.created_at > 6.hours.ago %>
+        <% row_style = "border-color: #D4A37322; background-color: white;" %>
+        <div class="block md:flex md:items-center py-2 md:py-3 px-2 md:px-6 border-b transition" style="<%= row_style %>" onmouseover="this.style.backgroundColor='#FAF9F6';" onmouseout="this.style.backgroundColor='white';">
+        <%= link_to post, class: "flex-1 block md:flex md:items-center md:min-h-0 min-w-0" do %>
+          <%# 이미지 썸네일 확인 %>
+          <% has_image = false %>
+          <% image_url = nil %>
+          <% if post.attachment_file.attached? && post.attachment_file.content_type&.start_with?('image/') %>
+            <% has_image = true %>
+            <% if post.attachment_file.variable? %>
+              <% image_url = rails_representation_path(post.attachment_file.variant(resize_to_limit: [120, 80]), only_path: true) rescue nil %>
+            <% else %>
+              <% image_url = rails_blob_path(post.attachment_file, only_path: true) rescue nil %>
+            <% end %>
+          <% elsif post.content.present? %>
+            <% img_match = post.content.to_s.match(/<img[^>]+src=["']([^"']+)["']/i) %>
+            <% if img_match && img_match[1].present? %>
+              <% has_image = true %>
+              <% image_url = img_match[1] %>
+            <% end %>
+          <% end %>
+          
+          <%# 모바일: 제목 한 줄, 데스크톱: 제목만 표시 %>
+          <div class="flex-1 md:flex md:items-center md:gap-2 mb-1 md:mb-0 min-w-0 w-full md:w-auto post-title-container">
+            <div class="flex items-center gap-2 min-w-0 w-full">
+              <%# 이미지 썸네일 (있는 경우) %>
+              <% if has_image && image_url %>
+                <div class="flex-shrink-0 w-12 h-12 md:w-16 md:h-16 rounded overflow-hidden border" style="border-color: #D4A37333;">
+                  <%= image_tag image_url, alt: post.title, class: "w-full h-full object-cover", loading: "lazy" %>
+                </div>
+              <% end %>
+              <% post_title_hover_in = "this.style.color='#D4A373';" %>
+              <% post_title_hover_out = "this.style.color='#433E3F';" %>
+              <span class="text-base md:text-base font-semibold md:font-medium text-gray-900 md:text-gray-800 flex-1 min-w-0 truncate md:block md:truncate-none post-title-mobile" style="color: #433E3F;" onmouseover="<%= post_title_hover_in %>" onmouseout="<%= post_title_hover_out %>"><%= post.title %></span>
+              <% if is_new %>
+                <span class="bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 md:text-xs md:px-2">NEW</span>
+              <% end %>
+            </div>
+          </div>
+          <%# 데스크톱: 메타 정보 가로 배치 %>
+          <%# 글쓴이 표시 제거 %>
+          <div class="hidden md:flex w-40 text-center text-[10px] text-gray-600 items-center justify-center gap-1.5 flex-shrink-0">
+            <span class="flex items-center gap-0.5 whitespace-nowrap">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+              </svg>
+              <%= format_number_short(post.views_count || 0) %>
+            </span>
+            <span class="flex items-center gap-0.5 whitespace-nowrap">
+              <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.834a1 1 0 001.707.707l3.546-3.546a1 1 0 00.293-.707V10.333a1 1 0 00-1.707-.707L7 12.586a1 1 0 00-.293.707zM15.818 9.5a1.5 1.5 0 00-1.5-1.5h-2.879a1 1 0 01-.707-.293l-3.546-3.546a1 1 0 00-1.414 0L5.293 8.293A1 1 0 015 9v6a1 1 0 001 1h2.879a1 1 0 01.707.293l3.546 3.546a1 1 0 001.414 0l3.546-3.546a1 1 0 00.293-.707V9.5z"></path>
+              </svg>
+              <%= format_number_short(post.likes_count || 0) %>
+            </span>
+            <span class="flex items-center gap-0.5 whitespace-nowrap">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+              </svg>
+              <%= format_number_short(post.respond_to?(:comments_count) ? (post.comments_count || 0) : (post.comments.loaded? ? post.comments.size : post.comments.count)) %>
+            </span>
+          </div>
+          <div class="hidden md:block w-28 text-center text-xs flex-shrink-0" style="color: #D4A373;"><%= post.created_at.strftime("%Y-%m-%d") %></div>
+        <% end %>
+        <%# 모바일: 메타 정보와 삭제 버튼 한 줄 배치 %>
+        <div class="md:hidden flex items-center justify-between gap-2 text-sm text-gray-500 mt-1">
+          <div class="flex items-center gap-1.5">
+            <%# 글쓴이 표시 제거 %>
+            <span><%= post.created_at.strftime("%m/%d") %></span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="flex items-center gap-0.5">
+              <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+              </svg>
+              <span class="text-[10px]"><%= format_number_short(post.views_count || 0) %></span>
+            </span>
+            <span class="flex items-center gap-0.5">
+              <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.834a1 1 0 001.707.707l3.546-3.546a1 1 0 00.293-.707V10.333a1 1 0 00-1.707-.707L7 12.586a1 1 0 00-.293.707zM15.818 9.5a1.5 1.5 0 00-1.5-1.5h-2.879a1 1 0 01-.707-.293l-3.546-3.546a1 1 0 00-1.414 0L5.293 8.293A1 1 0 015 9v6a1 1 0 001 1h2.879a1 1 0 01.707.293l3.546 3.546a1 1 0 001.414 0l3.546-3.546a1 1 0 00.293-.707V9.5z"></path>
+              </svg>
+              <span class="text-[10px]"><%= format_number_short(post.likes_count || 0) %></span>
+            </span>
+            <span class="flex items-center gap-0.5">
+              <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+              </svg>
+              <span class="text-[10px]"><%= format_number_short(post.respond_to?(:comments_count) ? (post.comments_count || 0) : (post.comments.loaded? ? post.comments.size : post.comments.count)) %></span>
+            </span>
+            <%# 운영자 삭제 버튼 (모바일) %>
+            <% if user_signed_in? && current_user.admin? %>
+              <%= button_to "삭제", admin_destroy_post_path(post), method: :delete, 
+                  class: "px-2 py-0.5 text-[10px] bg-red-600 text-white rounded hover:bg-red-700 transition",
+                  data: { confirm: "정말 이 게시글을 삭제하시겠습니까? (댓글도 함께 삭제됩니다)" },
+                  style: "min-height: auto;" %>
+            <% end %>
+          </div>
+        </div>
+        <%# 운영자 삭제 버튼 (데스크톱) %>
+        <% if user_signed_in? && current_user.admin? %>
+          <div class="hidden md:flex md:w-20 md:justify-center">
+            <%= button_to "삭제", admin_destroy_post_path(post), method: :delete, 
+                class: "px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition",
+                data: { confirm: "정말 이 게시글을 삭제하시겠습니까? (댓글도 함께 삭제됩니다)" },
+                style: "min-height: auto;" %>
+          </div>
+        <% end %>
+        </div>
+      <% end %>
+    <% else %>
+      <div class="py-12 text-center text-gray-400">
+        <p class="text-lg">아직 게시글이 없습니다.</p>
+        <p class="text-sm mt-2"><%= @category %> 카테고리의 첫 게시글을 작성해보세요!</p>
+      </div>
+    <% end %>
+    
+    <%# 페이지네이션 %>
+    <% if @posts.any? %>
+      <div class="py-6 flex justify-center">
+        <%= pagy_nav_custom(@pagy) %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<%# Google 번역 스타일 %>
+<style>
+  /* Google 번역 위젯 커스터마이징 */
+  .custom-google-translate {
+    display: inline-block !important;
+    vertical-align: middle;
+    min-height: 40px;
+    min-width: 150px;
+  }
+  
+  /* Google 번역 요소가 보이도록 보장 */
+  #google_translate_element {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  
+  /* Google 번역 드롭다운 스타일 */
+  #google_translate_element select,
+  #google_translate_element .goog-te-combo {
+    background-color: #FAF9F6 !important;
+    border: 1px solid #D4A37366 !important;
+    border-radius: 0.5rem !important;
+    padding: 0.5rem 2.5rem 0.5rem 0.875rem !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    color: #433E3F !important;
+    cursor: pointer !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23433E3F'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 0.75rem center !important;
+    background-size: 1.125rem !important;
+    min-width: 150px !important;
+    max-width: 200px !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+  }
+  
+  #google_translate_element select:hover,
+  #google_translate_element .goog-te-combo:hover {
+    border-color: #D4A373 !important;
+    background-color: #FFFFFF !important;
+    box-shadow: 0 2px 4px rgba(212, 163, 115, 0.15) !important;
+  }
+  
+  #google_translate_element select:focus,
+  #google_translate_element .goog-te-combo:focus {
+    outline: none !important;
+    border-color: #D4A373 !important;
+    box-shadow: 0 0 0 3px rgba(212, 163, 115, 0.2) !important;
+    background-color: #FFFFFF !important;
+  }
+  
+  /* Google 번역 위젯 숨기기 (드롭다운만 표시) */
+  .goog-te-banner-frame,
+  .goog-te-menu-frame {
+    display: none !important;
+  }
+  
+  body {
+    top: 0 !important;
+  }
+  
+  /* 번역 표시 영역 스타일 */
+  .goog-te-gadget {
+    font-family: inherit !important;
+  }
+  
+  .goog-te-gadget-simple {
+    background-color: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+  }
+  
+  /* 언어 선택 드롭다운 아이콘 제거 */
+  .goog-te-gadget-icon {
+    display: none !important;
+  }
+  
+  /* 번역 텍스트 숨기기 */
+  .goog-te-gadget-simple .goog-te-gadget-text {
+    display: none !important;
+  }
+  
+  /* 드롭다운이 보이도록 보장 */
+  #google_translate_element {
+    min-height: 40px !important;
+    display: inline-block !important;
+  }
+  
+  #google_translate_element .goog-te-combo {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  
+  /* 스킵 링크 숨기기 */
+  .goog-te-banner-frame.skiptranslate {
+    display: none !important;
+  }
+  
+  body {
+    top: 0 !important;
+  }
+  
+  /* 번역된 페이지에서도 스타일 유지 */
+  body.translated-ltr,
+  body.translated-rtl {
+    top: 0 !important;
+  }
+</style>
+
+<%# Google 번역 스크립트 %>
+<script type="text/javascript">
+function googleTranslateElementInit() {
+  // 기존 위젯이 이미 있으면 중복 생성하지 않음
+  var existingElement = document.getElementById('google_translate_element');
+  if (existingElement && existingElement.querySelector('.goog-te-combo')) {
+    return;
+  }
+  
+  new google.translate.TranslateElement({
+    pageLanguage: 'ko',
+    includedLanguages: 'en,hi,ja,zh-CN,es,fr',
+    layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+    autoDisplay: false
+  }, 'google_translate_element');
+  
+  // 언어 이름을 영어로 표시하도록 설정
+  function updateLanguageNames() {
+    var select = document.querySelector('#google_translate_element select, #google_translate_element .goog-te-combo');
+    if (select) {
+      var options = select.options || select.querySelectorAll('option');
+      var langNames = {
+        '': 'Select Language',
+        'ko': 'Korean',
+        'en': 'English',
+        'hi': 'Hindi',
+        'ja': 'Japanese',
+        'zh-CN': 'Chinese',
+        'es': 'Spanish',
+        'fr': 'French'
+      };
+      
+      for (var i = 0; i < options.length; i++) {
+        var option = options[i];
+        var langCode = option.value;
+        if (langNames[langCode]) {
+          option.text = langNames[langCode];
+        }
+      }
+    }
+  }
+  
+  // 여러 번 시도하여 Google Translate가 완전히 로드된 후 실행
+  setTimeout(updateLanguageNames, 100);
+  setTimeout(updateLanguageNames, 500);
+  setTimeout(updateLanguageNames, 1000);
+  
+  // Turbo 이벤트 처리
+  document.addEventListener('turbo:load', function() {
+    setTimeout(updateLanguageNames, 100);
+  });
+  document.addEventListener('turbo:render', function() {
+    setTimeout(updateLanguageNames, 100);
+  });
+  
+  // 드롭다운 변경 시에도 업데이트
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(updateLanguageNames, 1500);
+    });
+  } else {
+    setTimeout(updateLanguageNames, 1500);
+  }
+}
+</script>
+<script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>

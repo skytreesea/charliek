@@ -1,0 +1,70 @@
+<%= form_with scope: :article, url: articles_path, method: :post,
+    data: {
+      controller: "article-generate",
+      action: "submit->article-generate#submit",
+      article_generate_new_url_value: new_article_path
+    },
+    class: "space-y-6" do |form| %>
+  <% if local_assigns[:article] && article.errors.any? %>
+    <div class="p-4 bg-red-100 text-red-700 rounded-lg">
+      <h2 class="font-bold mb-2"><%= pluralize(article.errors.count, "개의 오류") %>가 있습니다:</h2>
+      <ul class="list-disc list-inside">
+        <% article.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%# 추천 키워드 20개 (드래그 또는 클릭으로 추가) %>
+  <div>
+    <p class="block text-sm font-semibold text-gray-700 mb-2">추천 키워드</p>
+    <p class="text-xs text-gray-500 mb-2">키워드를 클릭하거나 드래그하여 아래 영역에 넣어 주세요. 키워드는 2~6개 선택해야 합니다.</p>
+    <div class="flex flex-wrap gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200" data-article-generate-target="recommendedList">
+      <% recommended_keywords.each do |kw| %>
+        <span class="inline-flex items-center px-3 py-1.5 rounded-full text-sm bg-white border border-gray-300 cursor-grab hover:bg-blue-50 hover:border-blue-300 transition select-none"
+              draggable="true"
+              data-keyword="<%= kw %>"
+              data-action="click->article-generate#addKeyword dragstart->article-generate#dragStart"
+              data-article-generate-target="recommendedChip"><%= kw %></span>
+      <% end %>
+    </div>
+  </div>
+
+  <%# 선택한 키워드 (드롭 영역 + 키보드 직접 입력 , 구분) %>
+  <div>
+    <%= form.label :keywords, "선택한 키워드", class: "block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2" %>
+    <p class="text-xs text-gray-500 dark:text-gray-400 mb-1.5">키워드 입력 후 쉼표(,)를 누르면 칩으로 확정되고, 입력란은 비워져 새 키워드 입력·드래그앤드롭이 가능해집니다.</p>
+    <div class="min-h-[52px] p-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-200 dark:focus-within:border-blue-400 dark:focus-within:ring-blue-900/50 transition"
+         data-article-generate-target="dropZone"
+         data-action="dragover->article-generate#dragOver drop->article-generate#drop click->article-generate#focusInput">
+      <div class="flex flex-wrap gap-2 mb-2" data-article-generate-target="selectedChips"></div>
+      <input type="hidden" name="article[keywords]" data-article-generate-target="keywordsHidden" value="<%= local_assigns[:article]&.keywords %>" />
+      <input type="text"
+             value=""
+             placeholder="새 키워드 입력 후 쉼표(,) 또는 위에서 드래그·클릭"
+             class="w-full px-2 py-1 border-0 focus:ring-0 focus:outline-none text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 bg-transparent"
+             data-article-generate-target="keywordsInput"
+             autocomplete="off" />
+    </div>
+    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+      <span data-article-generate-target="keywordCount">0</span>개 선택 (최소 2개, 최대 6개)
+    </p>
+    <p class="mt-1 text-sm text-red-600 dark:text-red-400 hidden" data-article-generate-target="keywordError"></p>
+  </div>
+
+  <%# 문체 선택 %>
+  <div>
+    <%= form.label :writing_style, "문체 선택", class: "block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2" %>
+    <%= form.select :writing_style, 
+        [["공식문서", "official"], ["신문기사", "news"], ["블로그", "blog"], ["에세이", "essay"], ["소설가", "novelist"]],
+        { selected: "official" },
+        { class: "w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" } %>
+    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">기사 작성 시 선택한 문체로 작성됩니다.</p>
+  </div>
+
+  <div class="flex gap-4">
+    <%= form.submit "기사 생성", class: "px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition cursor-pointer disabled:opacity-50",
+        data: { article_generate_target: "submitBtn" } %>
+  </div>
+<% end %>

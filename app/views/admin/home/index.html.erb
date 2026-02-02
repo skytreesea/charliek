@@ -1,0 +1,181 @@
+<% content_for :title, "About 페이지 수정" %>
+
+<div class="max-w-6xl mx-auto px-4 py-8">
+  <div class="mb-6">
+    <h1 class="text-3xl font-bold mb-2" style="color: #433E3F;">About 페이지 수정</h1>
+    <p class="text-gray-600">About 페이지의 이미지와 문구를 설정할 수 있습니다.</p>
+  </div>
+
+  <%= form_with url: "/admin/home/update", method: :patch, local: true, multipart: true, data: { turbo: false }, class: "bg-white rounded-xl shadow-md border p-6", style: "border-color: #D4A37333;", id: "home-settings-form" do |f| %>
+    
+    <%# 로고 설정 섹션 %>
+    <div class="mb-8">
+      <h2 class="text-2xl font-semibold mb-4" style="color: #433E3F;">로고 설정</h2>
+      
+      <%# 현재 로고 미리보기 %>
+      <% current_logo = @logo_image.image.attached? ? rails_blob_path(@logo_image.image, only_path: true) : '/icon.png' %>
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-2">현재 로고</label>
+        <div class="flex items-center gap-4">
+          <div class="border rounded-lg overflow-hidden" style="border-color: #D4A37333; background-color: white; padding: 8px;">
+            <img src="<%= current_logo %>" alt="로고" class="h-16 w-16 object-contain" style="max-width: 64px; max-height: 64px;" onerror="this.src='/icon.png';">
+          </div>
+          <div class="text-sm text-gray-600">
+            <p>네비게이션 바에 표시되는 로고입니다.</p>
+            <p class="text-xs text-gray-500 mt-1">권장 크기: 정사각형 (64x64px 이상)</p>
+          </div>
+        </div>
+      </div>
+      
+      <%# 로고 파일 업로드 %>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">로고 파일 업로드</label>
+        <input 
+          type="file" 
+          name="home[logo_file]" 
+          accept="image/*"
+          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 transition text-base file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:cursor-pointer"
+          style="focus:ring-color: #D4A373; focus:border-color: #D4A373; file:background-color: #D4A373; file:text-white;"
+          onchange="handleLogoUpload(this)"
+          id="logo-file-input"
+        >
+        <p class="text-xs text-gray-500 mt-1">로컬 컴퓨터에서 로고 이미지 파일을 선택하세요.</p>
+      </div>
+    </div>
+    
+    <%# 이미지 설정 섹션 %>
+    <div class="mb-8">
+      <h2 class="text-2xl font-semibold mb-4" style="color: #433E3F;">메인 이미지 설정</h2>
+      
+      <%# 현재 이미지 미리보기 %>
+      <% current_image = @home_image.image.attached? ? rails_blob_path(@home_image.image, only_path: true) : (@home_settings[:image_url].present? ? @home_settings[:image_url] : nil) %>
+      <% if current_image %>
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-2">현재 이미지</label>
+          <div class="w-full rounded-lg overflow-hidden border" style="border-color: #D4A37333; max-height: 400px;">
+            <img src="<%= current_image %>" alt="메인 이미지" class="w-full h-auto object-cover" style="max-height: 400px; object-fit: cover;" onerror="this.style.display='none'; this.parentElement.innerHTML='<p class=\'text-red-500 text-sm p-4\'>이미지를 불러올 수 없습니다: <%= current_image %></p>';">
+          </div>
+        </div>
+      <% end %>
+      
+      <div class="space-y-4">
+        <%# 이미지 URL 입력 %>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">이미지 URL</label>
+          <input 
+            type="text" 
+            name="home[image_url]" 
+            value="<%= @home_settings[:image_url] %>" 
+            placeholder="https://example.com/image.jpg"
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 transition text-base"
+            style="focus:ring-color: #D4A373; focus:border-color: #D4A373;"
+            onfocus="this.style.borderColor='#D4A373'; this.style.boxShadow='0 0 0 2px rgba(212, 163, 115, 0.2)';"
+            onblur="this.style.borderColor='#d1d5db'; this.style.boxShadow='none';"
+            id="image-url-input"
+          >
+          <p class="text-xs text-gray-500 mt-1">웹 이미지 URL을 입력하세요. (URL과 파일 업로드 중 하나만 사용 가능)</p>
+        </div>
+        
+        <%# 이미지 파일 업로드 %>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">이미지 파일 업로드</label>
+          <input 
+            type="file" 
+            name="home[image_file]" 
+            accept="image/*"
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 transition text-base file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:cursor-pointer"
+            style="focus:ring-color: #D4A373; focus:border-color: #D4A373; file:background-color: #D4A373; file:text-white;"
+            onchange="handleImageUpload(this)"
+            id="image-file-input"
+          >
+          <p class="text-xs text-gray-500 mt-1">로컬 컴퓨터에서 이미지 파일을 선택하세요.</p>
+        </div>
+      </div>
+    </div>
+
+    <%# 문구 설정 섹션 %>
+    <div class="mb-8">
+      <h2 class="text-2xl font-semibold mb-4" style="color: #433E3F;">메인 문구 설정</h2>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">메인 문구</label>
+        <textarea 
+          name="home[text]" 
+          rows="6"
+          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 transition text-base resize-none"
+          style="focus:ring-color: #D4A373; focus:border-color: #D4A373;"
+          onfocus="this.style.borderColor='#D4A373'; this.style.boxShadow='0 0 0 2px rgba(212, 163, 115, 0.2)';"
+          onblur="this.style.borderColor='#d1d5db'; this.style.boxShadow='none';"
+          placeholder="메인 화면에 표시될 문구를 입력하세요."
+          id="home-text-input"
+        ><%= @home_settings[:text] %></textarea>
+        <p class="text-xs text-gray-500 mt-1">메인 화면에 표시될 문구를 입력하세요.</p>
+      </div>
+    </div>
+
+    <%# 적용 버튼 %>
+    <div class="flex justify-end gap-3 mt-6">
+      <%= link_to "취소", "/admin/users", class: "px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition" %>
+      <button type="submit" id="submit-button" class="px-6 py-3 text-white rounded-lg transition font-semibold" style="background-color: #D4A373;" onmouseover="this.style.backgroundColor='#C49363';" onmouseout="this.style.backgroundColor='#D4A373';">
+        적용하기
+      </button>
+    </div>
+  <% end %>
+</div>
+
+<script>
+  function handleLogoUpload(input) {
+    // 로고 파일 선택 시 미리보기 업데이트
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const preview = document.querySelector('img[alt="로고"]');
+        if (preview) {
+          preview.src = e.target.result;
+        }
+      };
+      reader.readAsDataURL(input.files[0]);
+      console.log('Logo file selected:', input.files[0].name, 'Size:', input.files[0].size);
+    }
+  }
+  
+  function handleImageUpload(input) {
+    const urlInput = document.getElementById('image-url-input');
+    // 파일이 선택되면 URL 입력 필드 비우기
+    if (input.files && input.files[0]) {
+      urlInput.value = '';
+      console.log('File selected:', input.files[0].name, 'Size:', input.files[0].size);
+    }
+  }
+  
+  // URL 입력 시 파일 선택 해제
+  document.getElementById('image-url-input')?.addEventListener('input', function() {
+    if (this.value.trim()) {
+      const fileInput = document.getElementById('image-file-input');
+      if (fileInput) {
+        fileInput.value = '';
+      }
+    }
+  });
+  
+  // 폼 제출 확인
+  document.getElementById('home-settings-form')?.addEventListener('submit', function(e) {
+    const logoInput = document.getElementById('logo-file-input');
+    const fileInput = document.getElementById('image-file-input');
+    const urlInput = document.getElementById('image-url-input');
+    const submitButton = document.getElementById('submit-button');
+    
+    if (logoInput && logoInput.files && logoInput.files[0]) {
+      console.log('Submitting form with logo:', logoInput.files[0].name);
+      submitButton.disabled = true;
+      submitButton.textContent = '적용 중...';
+    } else if (fileInput && fileInput.files && fileInput.files[0]) {
+      console.log('Submitting form with file:', fileInput.files[0].name);
+      submitButton.disabled = true;
+      submitButton.textContent = '적용 중...';
+    } else if (urlInput && urlInput.value.trim()) {
+      console.log('Submitting form with URL:', urlInput.value);
+      submitButton.disabled = true;
+      submitButton.textContent = '적용 중...';
+    }
+  });
+</script>

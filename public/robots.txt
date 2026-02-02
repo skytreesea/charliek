@@ -1,0 +1,27 @@
+# robots.txt for charliek.kr
+# See https://www.robotstxt.org/robotstxt.html for documentation
+
+# Google AdSense Mediapartners-Google 봇은 모든 경로 허용
+User-agent: Mediapartners-Google
+Allow: /
+
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /users/
+Disallow: /nickname/
+Disallow: /backtests/calculate
+Disallow: /posts/*/like
+Disallow: /posts/*/unlike
+Disallow: /posts/*/admin_destroy
+Disallow: /posts/*/comments
+
+# ads.txt 파일 명시적 허용
+User-agent: *
+Allow: /ads.txt
+
+# Sitemap
+Sitemap: https://charliek.kr/sitemap.xml
+
+# Crawl-delay (선택사항, 필요시 조정)
+# Crawl-delay: 1

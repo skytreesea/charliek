@@ -1,0 +1,25 @@
+<div class="max-w-md mx-auto px-2 sm:px-4 py-6 sm:py-12">
+  <div class="bg-white rounded-xl shadow-lg border p-4 sm:p-8" style="border-color: #D4A37333;">
+    <h1 class="text-2xl sm:text-3xl font-bold mb-2 text-center" style="color: #433E3F;">코인 구매</h1>
+    <p class="text-gray-600 text-sm text-center mb-6">마이뮤즈·기사생성기 이용에 사용되는 냥(코인)을 구매할 수 있습니다.</p>
+
+    <%# 현재 보유 코인 %>
+    <div class="mb-6 p-4 rounded-lg" style="background-color: #FAF9F6;">
+      <p class="text-sm text-gray-600 mb-1">현재 보유</p>
+      <p class="text-xl font-bold flex items-center gap-2" style="color: #433E3F;">
+        <span class="text-2xl" title="냥 (코인)">🪙</span>
+        <%= current_user.coins_display %>냥
+        <% if current_user.super_admin? %>
+          <span class="text-sm font-normal text-gray-500">(무한)</span>
+        <% end %>
+      </p>
+    </div>
+
+    <%# 결제 연동 예정: 나중에 토스/스트라이프 등 연동 %>
+    <div class="border border-dashed rounded-lg p-6 text-center" style="border-color: #D4A373; background-color: #FFFBF7;">
+      <p class="text-gray-600 text-sm mb-4">결제 기능이 곧 제공됩니다.</p>
+      <p class="text-xs text-gray-500 mb-4">코인 구매(결제) 연동 후 이 페이지에서 결제할 수 있습니다.</p>
+      <%= link_to "My로 돌아가기", edit_nickname_path, class: "inline-flex items-center justify-center px-6 py-3 rounded-lg font-semibold text-sm transition", style: "background-color: #D4A373; color: white;", onmouseover: "this.style.backgroundColor='#C4A373';", onmouseout: "this.style.backgroundColor='#D4A373';" %>
+    </div>
+  </div>
+</div>

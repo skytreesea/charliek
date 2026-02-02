@@ -1,0 +1,352 @@
+<%# JSON-LD Structured Data (BlogPosting) for SEO - Google 가이드라인 준수 %>
+<% content_for :head do %>
+  <%# 실제 화면에 표시되는 내용과 일치하는 데이터 사용 (스팸 방지) %>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": <%= raw @post.title.to_json %>,
+    "description": <%= raw @meta_description.to_json %>,
+    "datePublished": "<%= @post.created_at.iso8601 %>",
+    "dateModified": "<%= @post.updated_at.iso8601 %>",
+    <%# 글쓴이 정보 제거 %>
+    "publisher": {
+      "@type": "Organization",
+      "name": "Charlie K Archive",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "<%= request.base_url %>/icon.png"
+      }
+    },
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": "<%= request.base_url %><%= request.path %>"
+    },
+    "articleSection": <%= raw (@post.category || "주식").to_json %><% if defined?(@og_image) && @og_image.present? %>,
+    "image": {
+      "@type": "ImageObject",
+      "url": "<%= @og_image %>"
+    }<% end %>
+  }
+  </script>
+<% end %>
+
+<div class="max-w-3xl mx-auto px-2 sm:px-4 py-4 sm:py-8 w-full overflow-x-hidden" id="post-top">
+  <%# 상단 영역 %>
+  <div class="mb-6 sm:mb-8">
+    <h1 class="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4 leading-tight"><%= @post.title %></h1>
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 text-gray-500 text-xs sm:text-sm mb-4 sm:mb-6">
+      <div>
+        <%# 글쓴이 표시 제거 %>
+        <span><%= @post.created_at.strftime("%Y년 %m월 %d일 %H:%M") %></span>
+      </div>
+      <div class="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm">
+        <span class="flex items-center gap-1 text-gray-600">
+          <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+          </svg>
+          <%= format_number_short(@post.views_count || 0) %>
+        </span>
+        <span class="flex items-center gap-1 text-gray-600">
+          <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.834a1 1 0 001.707.707l3.546-3.546a1 1 0 00.293-.707V10.333a1 1 0 00-1.707-.707L7 12.586a1 1 0 00-.293.707zM15.818 9.5a1.5 1.5 0 00-1.5-1.5h-2.879a1 1 0 01-.707-.293l-3.546-3.546a1 1 0 00-1.414 0L5.293 8.293A1 1 0 015 9v6a1 1 0 001 1h2.879a1 1 0 01.707.293l3.546 3.546a1 1 0 001.414 0l3.546-3.546a1 1 0 00.293-.707V9.5z"></path>
+          </svg>
+          <%= format_number_short(@post.likes_count || 0) %>
+        </span>
+        <span class="flex items-center gap-1 text-gray-600">
+          <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+          </svg>
+          <%= format_number_short(@comments_count) %>
+        </span>
+        <%# URL 복사 버튼 %>
+        <button 
+          id="copy-url-btn" 
+          onclick="copyPostUrl()" 
+          class="flex items-center gap-1 text-gray-600 hover:text-gray-900 transition cursor-pointer"
+          title="글 주소 복사"
+        >
+          <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <%# 본문 영역 %>
+  <div class="rounded-lg p-4 sm:p-8 mb-6 sm:mb-8 border" style="background-color: #FAF9F6; border-color: #D4A37333;">
+    <div class="prose prose-sm sm:prose-lg max-w-none text-gray-800 leading-relaxed text-sm sm:text-base">
+      <%# 이미지에 alt 속성 자동 추가 (SEO 최적화) %>
+      <% processed_content = add_alt_to_images(@post.content, @post.title) %>
+      <%= sanitize(simple_format(processed_content), tags: ['p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'a', 'img'], attributes: ['href', 'src', 'alt', 'title', 'style', 'class', 'width', 'height']) %>
+    </div>
+    
+    <%# 첨부파일 영역 %>
+    <% if @post.attachment_file.attached? %>
+      <%# 중복 요청 방지를 위해 attachment_file 속성을 한 번만 접근하여 변수에 저장 %>
+      <% attachment = @post.attachment_file %>
+      <% attachment_filename = attachment.filename %>
+      <% attachment_byte_size = attachment.byte_size %>
+      <% attachment_content_type = attachment.content_type %>
+      <% attachment_is_image = attachment_content_type&.start_with?('image/') %>
+      <% attachment_blob_path = @post_image_blob_path || rails_blob_path(attachment, only_path: true) %>
+      
+      <div class="mt-6 pt-6 border-t" style="border-color: #D4A37333;">
+        <h3 class="text-sm font-semibold text-gray-700 mb-3">첨부파일</h3>
+        <% if attachment_is_image %>
+          <%# 이미지 파일인 경우 미리보기 표시 %>
+          <div class="bg-white rounded-lg border p-3" style="border-color: #D4A37333;">
+            <div class="mb-3">
+              <%# 컨트롤러에서 생성한 variant를 재사용 (중복 요청 방지) %>
+              <% if @post_image_variant %>
+                <%= image_tag @post_image_variant, 
+                    alt: @post.title.present? ? @post.title : attachment_filename, 
+                    class: "max-w-full h-auto rounded-lg", 
+                    style: "max-height: 600px;",
+                    loading: "lazy" %>
+              <% else %>
+                <%= image_tag attachment_blob_path, alt: @post.title.present? ? @post.title : attachment_filename, class: 'max-w-full h-auto rounded-lg', style: 'max-height: 600px;', loading: 'lazy' %>
+              <% end %>
+            </div>
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-gray-800"><%= attachment_filename %></p>
+                <p class="text-xs text-gray-500 mt-1"><%= number_to_human_size(attachment_byte_size) %></p>
+              </div>
+              <%= link_to attachment_blob_path, class: "px-4 py-2 bg-slate-700 text-white rounded-lg text-sm font-semibold hover:bg-slate-600 transition flex items-center gap-2", style: "background-color: #475569; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600; font-size: 0.875rem; text-decoration: none; min-height: 44px;", target: "_blank", download: attachment_filename.to_s do %>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                </svg>
+                다운로드
+              <% end %>
+            </div>
+          </div>
+        <% else %>
+          <%# PDF 등 기타 파일인 경우 기존 방식 %>
+          <div class="flex items-center gap-3 p-3 bg-white rounded-lg border" style="border-color: #D4A37333;">
+            <svg class="w-6 h-6 text-gray-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium text-gray-800 truncate"><%= attachment_filename %></p>
+              <p class="text-xs text-gray-500 mt-1">
+                <%= number_to_human_size(attachment_byte_size) %>
+              </p>
+            </div>
+            <%= link_to attachment_blob_path, class: "px-4 py-2 bg-slate-700 text-white rounded-lg text-sm font-semibold hover:bg-slate-600 transition flex items-center gap-2", style: "background-color: #475569; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600; font-size: 0.875rem; text-decoration: none; min-height: 44px;", target: "_blank", download: attachment_filename.to_s do %>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+              </svg>
+              다운로드
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <%# 좋아요 버튼 %>
+  <% if user_signed_in? %>
+    <div class="mb-6 sm:mb-8">
+      <% if @post.liked_by?(current_user) %>
+        <%= button_to "❤️ 좋아요 취소", unlike_post_path(@post), method: :delete, class: "px-4 py-2 bg-slate-700 text-white rounded-lg font-semibold text-sm", style: "background-color: #475569; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600; font-size: 0.875rem; border: none; cursor: pointer; min-height: 44px;" %>
+      <% else %>
+        <%= button_to "🤍 좋아요", like_post_path(@post), method: :post, class: "px-4 py-2 bg-slate-700 text-white rounded-lg font-semibold text-sm", style: "background-color: #475569; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600; font-size: 0.875rem; border: none; cursor: pointer; min-height: 44px;" %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%# 댓글 영역 %>
+  <div class="rounded-lg p-4 sm:p-6 border mb-6 sm:mb-8" style="background-color: #FAF9F6; border-color: #D4A37333;">
+    <h2 class="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">댓글 (<%= format_number_short(@comments_count) %>)</h2>
+    
+    <%# 댓글 작성 폼 %>
+    <% if user_signed_in? %>
+      <%= form_with model: [@post, @comment], local: true, class: "mb-4 sm:mb-6", id: "comment-form" do |f| %>
+        <div class="flex flex-col sm:flex-row gap-2">
+          <%= f.text_area :content, rows: 3, placeholder: "댓글을 작성하세요...", class: "flex-1 text-sm border rounded-lg p-3 focus:ring-2 bg-white resize-none", style: "border-color: #D4A37366;", id: "comment-content", onfocus: "this.style.borderColor='#D4A373'; this.style.boxShadow='0 0 0 2px rgba(212, 163, 115, 0.2)';", onblur: "this.style.borderColor='#D4A37366'; this.style.boxShadow='none';" %>
+          <%= f.submit "댓글입력", class: "px-4 py-2 text-sm bg-slate-700 text-white rounded-lg font-medium sm:self-end", style: "background-color: #475569; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 500; font-size: 0.875rem; border: none; cursor: pointer; min-height: 44px;" %>
+        </div>
+      <% end %>
+      <script>
+        document.addEventListener('DOMContentLoaded', function() {
+          const textarea = document.getElementById('comment-content');
+          const form = document.getElementById('comment-form');
+          if (textarea && form) {
+            textarea.addEventListener('keydown', function(e) {
+              if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                form.requestSubmit();
+              }
+            });
+          }
+        });
+      </script>
+    <% else %>
+      <p class="text-gray-500 mb-4 text-sm">댓글을 작성하려면 <%= link_to "로그인", "/users/sign_in", style: "color: #D4A373;", class: "hover:underline", onmouseover: "this.style.color='#433E3F';", onmouseout: "this.style.color='#D4A373';" %>해주세요.</p>
+    <% end %>
+
+    <%# 댓글 목록 %>
+    <div class="space-y-4 mt-6">
+      <% @post_comments.each do |comment| %>
+        <%# N+1 쿼리 방지: 이미 eager loaded된 user 사용 %>
+        <% comment_user = comment.user %>
+        <div class="border-b pb-3 last:border-0" style="border-color: #D4A37333;">
+          <div class="flex justify-between items-start mb-1">
+            <span class="text-xs font-medium text-gray-700"><%= comment_user&.display_name || "익명" %></span>
+            <span class="text-xs text-gray-400"><%= comment.created_at.strftime("%Y-%m-%d %H:%M") %></span>
+          </div>
+          <p class="text-sm text-gray-600 mt-1"><%= comment.content %></p>
+          <%# user_id 비교로 최적화 (객체 비교 대신) %>
+          <% if user_signed_in? && comment_user && comment_user.id == current_user.id %>
+            <%= button_to "삭제", post_comment_path(@post, comment), method: :delete, class: "mt-1 px-2 py-0.5 text-xs bg-slate-700 text-white rounded", style: "background-color: #475569; color: white; padding: 0.125rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; border: none; cursor: pointer;", data: { confirm: "댓글을 삭제하시겠습니까?" } %>
+          <% end %>
+        </div>
+      <% end %>
+      <% if @post_comments.empty? %>
+        <p class="text-gray-400 text-center py-4 text-xs">아직 댓글이 없습니다.</p>
+      <% end %>
+    </div>
+  </div>
+
+  <%# 관련 글 보기 섹션 %>
+  <% if @related_posts&.any? %>
+    <div class="rounded-lg p-4 sm:p-6 border mb-6 sm:mb-8" style="background-color: #FAF9F6; border-color: #D4A37333;">
+      <h2 class="text-base sm:text-lg font-bold text-gray-900 mb-4 sm:mb-5" style="color: #433E3F;">관련 글 보기</h2>
+      <div class="space-y-3">
+        <% @related_posts.each do |related_post| %>
+          <%# N+1 쿼리 방지: 이미 eager loaded된 user 사용, slug가 있으면 slug 사용 %>
+          <%= link_to post_path(related_post), class: "block bg-white rounded-lg border p-3 sm:p-4 transition hover:shadow-md", style: "border-color: #D4A37333;", onmouseover: "this.style.borderColor='#D4A373';", onmouseout: "this.style.borderColor='#D4A37333';" do %>
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex-1 min-w-0">
+                <h3 class="text-sm sm:text-base font-semibold text-gray-900 mb-2 line-clamp-2" style="color: #433E3F; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                  <%= related_post.title %>
+                </h3>
+                <div class="flex items-center gap-2 sm:gap-3 text-xs text-gray-500">
+                  <%# 글쓴이 표시 제거 %>
+                  <span class="flex items-center gap-1">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                    </svg>
+                    <%= format_number_short(related_post.views_count || 0) %>
+                  </span>
+                  <span>·</span>
+                  <span class="flex items-center gap-1">
+                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.834a1 1 0 001.707.707l3.546-3.546a1 1 0 00.293-.707V10.333a1 1 0 00-1.707-.707L7 12.586a1 1 0 00-.293.707zM15.818 9.5a1.5 1.5 0 00-1.5-1.5h-2.879a1 1 0 01-.707-.293l-3.546-3.546a1 1 0 00-1.414 0L5.293 8.293A1 1 0 015 9v6a1 1 0 001 1h2.879a1 1 0 01.707.293l3.546 3.546a1 1 0 001.414 0l3.546-3.546a1 1 0 00.293-.707V9.5z"></path>
+                    </svg>
+                    <%= format_number_short(related_post.likes_count || 0) %>
+                  </span>
+                  <span>·</span>
+                  <span><%= related_post.created_at.strftime("%Y-%m-%d") %></span>
+                </div>
+              </div>
+              <div class="flex-shrink-0">
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+              </div>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <%# 하단 버튼 %>
+  <div class="flex flex-col sm:flex-row justify-center gap-2 sm:gap-4">
+    <button onclick="document.getElementById('post-top').scrollIntoView({ behavior: 'smooth', block: 'start' });" class="px-6 py-3 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 transition text-center" style="min-height: 44px; display: flex; align-items: center; justify-content: center; background: white; cursor: pointer;">
+      글 처음으로
+    </button>
+    <%= link_to '목록으로', "/posts?category=#{CGI.escape(@post.category.to_s)}", class: "px-6 py-3 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 transition text-center", style: "min-height: 44px; display: flex; align-items: center; justify-content: center;" %>
+    <% if user_signed_in? && @post.user == current_user %>
+      <%= link_to '수정하기', edit_post_path(@post), class: "px-4 py-3 bg-slate-700 text-white rounded-lg text-sm text-center", style: "background-color: #475569; color: white; padding: 0.75rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; display: block; text-decoration: none; min-height: 44px;" %>
+      <%= button_to '삭제', post_path(@post), method: :delete, class: "px-4 py-3 bg-slate-700 text-white rounded-lg text-sm w-full sm:w-auto", style: "background-color: #475569; color: white; padding: 0.75rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; border: none; cursor: pointer; min-height: 44px;", data: { confirm: "진짜 해당 글을 삭제하시겠습니까?" }, form: { style: "display: block; width: 100%;" } %>
+    <% end %>
+  </div>
+</div>
+
+<%# 알림 메시지 스타일 %>
+<style>
+  #copy-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: #433E3F;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  
+  #copy-notification.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
+
+<%# 알림 메시지 요소 %>
+<div id="copy-notification">이 글의 주소가 복사되었습니다</div>
+
+<script>
+  function copyPostUrl() {
+    const url = window.location.href;
+    
+    // 클립보드에 복사
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(function() {
+        showNotification();
+      }).catch(function(err) {
+        console.error('클립보드 복사 실패:', err);
+        fallbackCopyTextToClipboard(url);
+      });
+    } else {
+      // 구형 브라우저 지원
+      fallbackCopyTextToClipboard(url);
+    }
+  }
+  
+  function fallbackCopyTextToClipboard(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.position = "fixed";
+    
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+      const successful = document.execCommand('copy');
+      if (successful) {
+        showNotification();
+      } else {
+        alert('클립보드 복사에 실패했습니다.');
+      }
+    } catch (err) {
+      console.error('클립보드 복사 실패:', err);
+      alert('클립보드 복사에 실패했습니다.');
+    }
+    
+    document.body.removeChild(textArea);
+  }
+  
+  function showNotification() {
+    const notification = document.getElementById('copy-notification');
+    notification.classList.add('show');
+    
+    setTimeout(function() {
+      notification.classList.remove('show');
+    }, 2000);
+  }
+</script>

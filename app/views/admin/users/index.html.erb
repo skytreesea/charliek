@@ -1,0 +1,166 @@
+<% content_for :title, "사용자 관리" %>
+
+<div class="max-w-6xl mx-auto px-4 py-8">
+  <div class="mb-6 flex justify-between items-start">
+    <div>
+      <h1 class="text-3xl font-bold mb-2" style="color: #433E3F;">사용자 관리</h1>
+      <p class="text-gray-600">일반회원을 관리자 또는 일반회원으로 변경할 수 있습니다.</p>
+    </div>
+    <% if @users.any? %>
+      <button 
+        type="button" 
+        onclick="applyAllRoleChanges()" 
+        class="px-6 py-3 text-sm font-semibold text-white rounded-lg transition" 
+        style="background-color: #D4A373;"
+        onmouseover="this.style.backgroundColor='#C49363';"
+        onmouseout="this.style.backgroundColor='#D4A373';"
+        id="apply-all-button"
+      >
+        적용하기
+      </button>
+    <% end %>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-md border p-6" style="border-color: #D4A37333;">
+    <div class="mb-6">
+      <h2 class="text-xl font-semibold text-gray-800">회원 관리</h2>
+      <p class="text-sm text-gray-600 mt-1">각 회원의 드롭다운에서 등급을 선택하고 오른쪽 위의 '적용하기' 버튼을 클릭하세요.</p>
+    </div>
+
+    <% if @users.any? %>
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead style="background-color: #FAF9F6;">
+            <tr>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">별명</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">이메일</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">현재 역할</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">역할 변경</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">가입일</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <% @users.each do |user| %>
+              <tr class="transition" onmouseover="this.style.backgroundColor='#FAF9F6';" onmouseout="this.style.backgroundColor='transparent';">
+                <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900"><%= user.display_name %></td>
+                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600"><%= user.email %></td>
+                <td class="px-4 py-3 whitespace-nowrap">
+                  <span class="px-2 py-1 text-xs font-semibold rounded <%= user.role == 'admin' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800' %>">
+                    <%= user.role_display_name %>
+                  </span>
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap">
+                  <select id="role-<%= user.id %>" data-user-id="<%= user.id %>" data-original-role="<%= user.role %>" class="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-<%= user.role == 'admin' ? 'blue' : 'gray' %>-500" style="accent-color: #D4A373;">
+                    <option value="normal" <%= 'selected' if user.role == 'normal' %>>일반</option>
+                    <option value="admin" <%= 'selected' if user.role == 'admin' %>>관리자</option>
+                  </select>
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500"><%= user.created_at.strftime("%Y-%m-%d") %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <div class="text-center py-12 text-gray-400">
+        <p>관리할 사용자가 없습니다.</p>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<script>
+  function applyAllRoleChanges() {
+    const button = document.getElementById('apply-all-button');
+    const selects = document.querySelectorAll('select[id^="role-"]');
+    const changes = [];
+    
+    // 변경된 역할 찾기
+    selects.forEach(select => {
+      const userId = select.getAttribute('data-user-id');
+      const originalRole = select.getAttribute('data-original-role');
+      const selectedRole = select.value;
+      
+      console.log(`User ${userId}: original=${originalRole}, selected=${selectedRole}`);
+      
+      // 문자열 비교로 정확히 확인
+      if (selectedRole && originalRole && selectedRole.trim() !== originalRole.trim()) {
+        changes.push({ userId: userId, role: selectedRole });
+        console.log(`Added change: user_id=${userId}, role=${selectedRole}`);
+      }
+    });
+    
+    console.log(`Total changes: ${changes.length}`, changes);
+    
+    if (changes.length === 0) {
+      alert('변경할 내용이 없습니다.');
+      return;
+    }
+    
+    // 버튼 비활성화 및 로딩 표시
+    const originalText = button.textContent;
+    button.disabled = true;
+    button.textContent = '적용 중...';
+    
+    // 모든 변경사항을 한 번에 전송 (Rails가 이해할 수 있는 형식으로)
+    const formData = new FormData();
+    changes.forEach((change, index) => {
+      formData.append(`changes[${index}][user_id]`, String(change.userId));
+      formData.append(`changes[${index}][role]`, String(change.role));
+    });
+    
+    const csrfToken = document.querySelector('meta[name="csrf-token"]');
+    if (csrfToken) {
+      formData.append('authenticity_token', csrfToken.content);
+    }
+    
+    // 디버깅: FormData 내용 출력
+    console.log('Sending FormData:');
+    for (let pair of formData.entries()) {
+      console.log(pair[0] + ': ' + pair[1]);
+    }
+    
+    // AJAX 요청
+    fetch('/admin/users/update_roles_batch', {
+      method: 'PATCH',
+      body: formData,
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRF-Token': csrfToken ? csrfToken.content : ''
+      }
+    })
+    .then(response => {
+      console.log('Response status:', response.status);
+      return response.json().then(data => {
+        console.log('Response data:', data);
+        if (!response.ok) {
+          throw new Error(data.error || '서버 오류가 발생했습니다.');
+        }
+        return data;
+      });
+    })
+    .then(data => {
+      if (data.success) {
+        if (data.updated_count && data.updated_count > 0) {
+          alert('적용이 완료되었습니다.');
+          // 페이지 새로고침
+          window.location.reload();
+        } else {
+          alert('변경할 내용이 없습니다.');
+          button.disabled = false;
+          button.textContent = originalText;
+        }
+      } else {
+        alert(data.error || '역할 변경에 실패했습니다.');
+        button.disabled = false;
+        button.textContent = originalText;
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert(error.message || '오류가 발생했습니다.');
+      button.disabled = false;
+      button.textContent = originalText;
+    });
+  }
+</script>

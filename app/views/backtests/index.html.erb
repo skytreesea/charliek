@@ -1,0 +1,421 @@
+<div class="max-w-4xl mx-auto px-1 sm:px-4 py-8">
+  <%# 헤더 영역 %>
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-4">
+    <h1 class="text-3xl font-bold" style="color: #433E3F;">📊 주식타임머신(WHB)</h1>
+    <div class="flex flex-col gap-1">
+      <%# Google 번역 버튼 %>
+      <div id="google_translate_element_backtest" class="custom-google-translate"></div>
+      <p class="text-xs text-gray-500 italic">You can choose your language here</p>
+    </div>
+  </div>
+  <p class="text-gray-600 mb-4">"Would Have Been Better" - 과거에 이렇게 투자했다면 어땠을까요? 궁금하시죠? 😊</p>
+  <p class="text-sm text-gray-500 mb-6">과거 주가 데이터로 포트폴리오를 만들어보고, 실제로 얼마나 벌었을지 시뮬레이션해보는 도구예요. 재미있게 사용해보세요!</p>
+
+  <%# 주식타임머신 가정 및 사용법 안내 %>
+  <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-md border p-6 mb-8" style="border-color: #D4A37333;">
+    <h2 class="text-xl font-bold mb-3 flex items-center" style="color: #433E3F;">
+      <span class="mr-2">💡</span> 간단한 사용법
+    </h2>
+    <p class="text-sm text-gray-700 mb-4">아래 가정들을 이해하고 사용하시면 더 정확한 결과를 얻을 수 있어요!</p>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+      <div class="bg-white rounded-lg p-4 border" style="border-color: #D4A37333;">
+        <h3 class="font-semibold mb-2 text-sm flex items-center" style="color: #433E3F;">
+          <span class="mr-1">💰</span> 초기 투자 자본
+        </h3>
+        <p class="text-sm text-gray-700">$1,000로 가정해요. 주식 몇 주를 살지는 중요하지 않고, 비율로 계산합니다.</p>
+      </div>
+      
+      <div class="bg-white rounded-lg p-4 border" style="border-color: #D4A37333;">
+        <h3 class="font-semibold mb-2 text-sm flex items-center" style="color: #433E3F;">
+          <span class="mr-1">📈</span> 비중 설정
+        </h3>
+        <p class="text-sm text-gray-700">각 종목에 얼마나 투자할지 0-100% 사이에서 마음대로 조정하세요!</p>
+      </div>
+      
+      <div class="bg-white rounded-lg p-4 border" style="border-color: #D4A37333;">
+        <h3 class="font-semibold mb-2 text-sm flex items-center" style="color: #433E3F;">
+          <span class="mr-1">💵</span> 현금 보유
+        </h3>
+        <p class="text-sm text-gray-700">종목 비중 합이 100% 안 되면 나머지는 자동으로 현금으로 둡니다.</p>
+      </div>
+      
+      <div class="bg-white rounded-lg p-4 border" style="border-color: #D4A37333;">
+        <h3 class="font-semibold mb-2 text-sm flex items-center" style="color: #433E3F;">
+          <span class="mr-1">📅</span> 계산 방식
+        </h3>
+        <p class="text-sm text-gray-700">매일 종가 기준으로 포트폴리오 가치를 재계산해요. 리밸런싱은 없습니다.</p>
+      </div>
+    </div>
+    
+    <div class="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
+      <h3 class="font-semibold mb-2 text-sm flex items-center" style="color: #433E3F;">
+        <span class="mr-2">⚠️</span> 알아두면 좋은 점
+      </h3>
+      <ul class="text-sm text-gray-700 space-y-1 list-disc list-inside">
+        <li>수수료나 세금 같은 거래 비용은 빼고 계산해요 (실제로는 조금 더 들 수 있어요)</li>
+        <li>배당금은 재투자하지 않아요</li>
+        <li>과거 성과가 미래를 보장하지 않는다는 걸 잊지 마세요! 😅</li>
+        <li>주말이나 공휴일은 가장 가까운 영업일 데이터를 사용해요</li>
+      </ul>
+    </div>
+  </div>
+
+  <%= form_with url: backtests_calculate_path, method: :post, 
+      data: { 
+        controller: "backtest", 
+        turbo: true,
+        action: "turbo:submit-end->backtest#handleSubmitEnd"
+      },
+      class: "bg-white rounded-xl shadow-md border p-6 sm:p-8 mb-8",
+      style: "border-color: #D4A37333;" do |f| %>
+    
+    <%# M7 종목 선택 섹션 %>
+    <div class="mb-6">
+      <h2 class="text-xl font-semibold mb-2" style="color: #433E3F;">1️⃣ 종목 선택 (최대 3개)</h2>
+      <p class="text-sm text-gray-600 mb-4">원하는 종목을 체크하세요. 여러 종목을 선택하면 포트폴리오를 구성할 수 있습니다. 이 버젼은 초기 버젼으로 M7 종목에 대한 결과값만 제시합니다. 앞으로 점점 더 많은 기능을 추가할 예정입니다.</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <% @available_tickers.each do |ticker| %>
+          <div 
+            class="border rounded-lg p-3" 
+            style="border-color: #D4A37333;"
+            data-controller="stock-info"
+          >
+            <div class="flex items-center space-x-2">
+              <%= check_box_tag "tickers[]", ticker, 
+                  @selected_tickers.include?(ticker),
+                  id: "ticker_#{ticker}",
+                  data: { 
+                    backtest_target: "tickerCheckbox",
+                    action: "change->backtest#toggleTicker"
+                  },
+                  class: "w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" %>
+              <%= label_tag "ticker_#{ticker}", stock_display_name(ticker), 
+                  class: "text-sm font-medium flex-1", 
+                  style: "color: #433E3F; cursor: pointer;",
+                  for: "ticker_#{ticker}" %>
+              <button 
+                type="button"
+                data-action="click->stock-info#toggle"
+                data-stock-info-target="icon"
+                class="text-blue-600 hover:text-blue-800 transition-colors flex-shrink-0"
+                aria-label="종목 정보 보기"
+                style="color: #3B82F6;"
+              >
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                </svg>
+              </button>
+            </div>
+            <%# 종목 설명 (토글 가능) %>
+            <div 
+              data-stock-info-target="description"
+              class="text-xs text-gray-600 leading-relaxed pt-2 pb-2"
+              style="display: none; padding-top: 0; padding-bottom: 0;"
+            >
+              <div class="pl-1 border-l-2" style="border-color: #D4A37366;">
+                <%= Stock.description(ticker) %>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <%# 비중 입력 섹션 (체크박스 선택 시에만 표시) %>
+    <div class="mb-4" id="weight_section" data-backtest-target="weightSection" style="display: none;">
+      <h2 class="text-xl font-semibold mb-1" style="color: #433E3F;">2️⃣ 비중 설정 (%)</h2>
+      <p class="text-sm text-gray-600 mb-3">각 종목에 투자할 비율을 슬라이더나 숫자 입력으로 조정하세요. 총합이 100%를 넘지 않도록 자동으로 조정됩니다.</p>
+      <div class="space-y-2" id="weight_inputs" data-backtest-target="weightInputs">
+        <%# 비중 입력창은 JavaScript로 동적으로 생성됨 %>
+      </div>
+      
+      <%# 현금 비중 (자동 계산, 읽기 전용) %>
+      <div class="flex items-center justify-between p-3 rounded-lg border-2 mt-2" 
+           style="background-color: #FAF9F6; border-color: #D4A373;">
+        <label for="cash_weight" class="text-sm font-medium w-20 font-semibold" style="color: #433E3F;">
+          현금:
+        </label>
+        <%= number_field_tag "cash_weight", 
+            0,
+            id: "cash_weight",
+            readonly: true,
+            data: { 
+              backtest_target: "cashWeight"
+            },
+            class: "flex-1 ml-4 px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed",
+            style: "max-width: 150px;" %>
+        <span class="text-sm text-gray-500 ml-2">%</span>
+      </div>
+      
+      <%# 총합 표시 %>
+      <div class="mt-2 p-3 rounded-lg border-2" style="border-color: #D4A373;">
+        <div class="flex items-center justify-between">
+          <span class="text-lg font-semibold" style="color: #433E3F;">총합:</span>
+          <span class="text-xl font-bold" 
+                data-backtest-target="totalWeight"
+                style="color: #D4A373;">0.00</span>
+          <span class="text-lg font-semibold ml-2">%</span>
+        </div>
+      </div>
+    </div>
+
+    <%# 기간 설정 (종목 선택 후에만 표시) %>
+    <div class="mb-6" id="date_section" data-backtest-target="dateSection" style="display: none;">
+      <h2 class="text-xl font-semibold mb-2" style="color: #433E3F;">3️⃣ 기간 설정</h2>
+      <p class="text-sm text-gray-600 mb-4">주식타임머신을 실행할 기간을 선택하세요.</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label for="start_date" class="block text-sm font-medium mb-2" style="color: #433E3F;">
+          시작일
+        </label>
+        <%= date_field_tag "start_date", 
+            @start_date,
+            id: "start_date",
+            min: @min_date&.to_s,
+            max: @max_date&.to_s,
+            data: { 
+              backtest_target: "startDateInput",
+              action: "change->backtest#updateDateRange"
+            },
+            class: "w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-blue-500" %>
+        <% if @min_date && @max_date %>
+          <p class="text-xs text-gray-500 mt-1">데이터 기간: <%= @min_date.strftime("%Y-%m-%d") %> ~ <%= @max_date.strftime("%Y-%m-%d") %></p>
+        <% end %>
+      </div>
+      
+      <div>
+        <label for="end_date" class="block text-sm font-medium mb-2" style="color: #433E3F;">
+          종료일
+        </label>
+        <%= date_field_tag "end_date", 
+            @end_date,
+            id: "end_date",
+            min: @min_date&.to_s,
+            max: @max_date&.to_s,
+            data: { 
+              backtest_target: "endDateInput",
+              action: "change->backtest#updateDateRange"
+            },
+            class: "w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-blue-500" %>
+      </div>
+    </div>
+    
+    <%# 환율은 달러 기준으로 고정 (숨김 필드) %>
+    <%= hidden_field_tag "exchange_rate", 1.0 %>
+
+    <%# 제출 버튼 %>
+    <div class="flex justify-center mt-6">
+      <%= submit_tag "🚀 주식타임머신 실행", 
+          data: { backtest_target: "submitButton" },
+          disabled: true,
+          class: "px-8 py-3 bg-slate-700 text-white rounded-lg font-semibold text-lg transition disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-600",
+          style: "background-color: #475569; min-width: 200px;" %>
+    </div>
+  <% end %>
+
+  <%# 결과 표시 영역 %>
+  <div id="backtest_result">
+    <%# Turbo Stream으로 결과가 여기에 표시됩니다 %>
+  </div>
+</div>
+
+<%# 숫자 입력 필드 스타일 %>
+<style>
+  /* 숫자 입력 필드 스피너(화살표) 제거 */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+</style>
+
+<%# Google 번역 스타일 %>
+<style>
+  /* Google 번역 위젯 커스터마이징 */
+  .custom-google-translate {
+    display: inline-block !important;
+    vertical-align: middle;
+    min-height: 40px;
+    min-width: 150px;
+  }
+  
+  /* Google 번역 요소가 보이도록 보장 */
+  #google_translate_element_backtest {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  
+  /* Google 번역 드롭다운 스타일 */
+  #google_translate_element_backtest select,
+  #google_translate_element_backtest .goog-te-combo {
+    background-color: #FAF9F6 !important;
+    border: 1px solid #D4A37366 !important;
+    border-radius: 0.5rem !important;
+    padding: 0.5rem 2.5rem 0.5rem 0.875rem !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    color: #433E3F !important;
+    cursor: pointer !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23433E3F'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 0.75rem center !important;
+    background-size: 1.125rem !important;
+    min-width: 150px !important;
+    max-width: 200px !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+  }
+  
+  #google_translate_element_backtest select:hover,
+  #google_translate_element_backtest .goog-te-combo:hover {
+    border-color: #D4A373 !important;
+    background-color: #FFFFFF !important;
+    box-shadow: 0 2px 4px rgba(212, 163, 115, 0.15) !important;
+  }
+  
+  #google_translate_element_backtest select:focus,
+  #google_translate_element_backtest .goog-te-combo:focus {
+    outline: none !important;
+    border-color: #D4A373 !important;
+    box-shadow: 0 0 0 3px rgba(212, 163, 115, 0.2) !important;
+    background-color: #FFFFFF !important;
+  }
+  
+  /* Google 번역 위젯 숨기기 (드롭다운만 표시) */
+  .goog-te-banner-frame,
+  .goog-te-menu-frame {
+    display: none !important;
+  }
+  
+  body {
+    top: 0 !important;
+  }
+  
+  /* 번역 표시 영역 스타일 */
+  #google_translate_element_backtest .goog-te-gadget {
+    font-family: inherit !important;
+  }
+  
+  #google_translate_element_backtest .goog-te-gadget-simple {
+    background-color: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+  }
+  
+  /* 언어 선택 드롭다운 아이콘 제거 */
+  #google_translate_element_backtest .goog-te-gadget-icon {
+    display: none !important;
+  }
+  
+  /* 번역 텍스트 숨기기 */
+  #google_translate_element_backtest .goog-te-gadget-simple .goog-te-gadget-text {
+    display: none !important;
+  }
+  
+  /* 드롭다운이 보이도록 보장 */
+  #google_translate_element_backtest .goog-te-combo {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  
+  /* 스킵 링크 숨기기 */
+  .goog-te-banner-frame.skiptranslate {
+    display: none !important;
+  }
+  
+  /* 번역된 페이지에서도 스타일 유지 */
+  body.translated-ltr,
+  body.translated-rtl {
+    top: 0 !important;
+  }
+</style>
+
+<%# Google 번역 스크립트 %>
+<script type="text/javascript">
+function googleTranslateElementInitBacktest() {
+  // 기존 위젯이 이미 있으면 중복 생성하지 않음
+  var existingElement = document.getElementById('google_translate_element_backtest');
+  if (existingElement && existingElement.querySelector('.goog-te-combo')) {
+    return;
+  }
+  
+  new google.translate.TranslateElement({
+    pageLanguage: 'ko',
+    includedLanguages: 'en,hi,ja,zh-CN,es,fr',
+    layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+    autoDisplay: false
+  }, 'google_translate_element_backtest');
+  
+  // 언어 이름을 영어로 표시하도록 설정
+  function updateLanguageNames() {
+    var select = document.querySelector('#google_translate_element_backtest select, #google_translate_element_backtest .goog-te-combo');
+    if (select) {
+      var options = select.options || select.querySelectorAll('option');
+      var langNames = {
+        '': 'Select Language',
+        'ko': 'Korean',
+        'en': 'English',
+        'hi': 'Hindi',
+        'ja': 'Japanese',
+        'zh-CN': 'Chinese',
+        'es': 'Spanish',
+        'fr': 'French'
+      };
+      
+      for (var i = 0; i < options.length; i++) {
+        var option = options[i];
+        var langCode = option.value;
+        if (langNames[langCode]) {
+          option.text = langNames[langCode];
+        }
+      }
+    }
+  }
+  
+  // 여러 번 시도하여 Google Translate가 완전히 로드된 후 실행
+  setTimeout(updateLanguageNames, 100);
+  setTimeout(updateLanguageNames, 500);
+  setTimeout(updateLanguageNames, 1000);
+  
+  // Turbo 이벤트 처리
+  document.addEventListener('turbo:load', function() {
+    setTimeout(updateLanguageNames, 100);
+  });
+  document.addEventListener('turbo:render', function() {
+    setTimeout(updateLanguageNames, 100);
+  });
+  
+  // 드롭다운 변경 시에도 업데이트
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(updateLanguageNames, 1500);
+    });
+  } else {
+    setTimeout(updateLanguageNames, 1500);
+  }
+}
+</script>
+<script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInitBacktest"></script>
+
+<script>
+  // 페이지 로드 시 총합 계산
+  document.addEventListener('DOMContentLoaded', function() {
+    const backtestController = Stimulus.getControllerForElementAndIdentifier(
+      document.querySelector('[data-controller="backtest"]'),
+      'backtest'
+    );
+    if (backtestController) {
+      backtestController.updateTotalWeight();
+    }
+  });
+</script>

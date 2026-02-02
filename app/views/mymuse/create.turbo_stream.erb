@@ -1,0 +1,169 @@
+<%= turbo_stream.replace "chord_result" do %>
+  <div id="chord_result" class="space-y-8">
+    <div class="bg-white rounded-xl shadow-lg border p-6" style="border-color: #D4A37333;">
+      <h2 class="text-2xl font-bold mb-6 text-center" style="color: #433E3F;">
+        코드 진행: <%= @mood %>
+      </h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 overflow-x-auto">
+        <% @progression.each do |chord| %>
+          <div class="min-w-0">
+            <%= render 'shared/chord_tab', tabs: chord[:tabs], chord_name: chord[:name] %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <% if @lyrics_lines.any? %>
+      <div class="bg-white rounded-xl shadow-lg border p-6" style="border-color: #D4A37333;">
+        <%# 모바일: 세로 배치, 데스크톱: 가로 배치 %>
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+          <h2 class="text-2xl font-bold text-center md:text-left" style="color: #433E3F;">
+            코드 악보
+          </h2>
+          <div class="flex flex-col sm:flex-row items-center gap-4" 
+               data-controller="guitar-player"
+               data-guitar-player-chords-value="<%= @progression.map { |c| c[:name] }.to_json %>">
+            <%# BPM 슬라이더 %>
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+              <label class="text-sm font-semibold whitespace-nowrap" style="color: #433E3F;">BPM:</label>
+              <div class="flex items-center gap-2 flex-1 sm:flex-initial">
+                <input 
+                  type="range" 
+                  min="60" 
+                  max="168" 
+                  value="120"
+                  class="flex-1 sm:w-32 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                  style="accent-color: #D4A373;"
+                  data-guitar-player-target="bpmSlider"
+                  data-action="input->guitar-player#updateBpm"
+                />
+                <span 
+                  class="text-sm font-bold min-w-[3rem] text-center" 
+                  style="color: #433E3F;"
+                  data-guitar-player-target="bpmDisplay"
+                >
+                  120
+                </span>
+              </div>
+            </div>
+            <%# 한 마디당 연주 횟수 드롭다운 %>
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+              <label class="text-sm font-semibold whitespace-nowrap" style="color: #433E3F;">한 마디당:</label>
+              <select 
+                class="px-3 py-1.5 text-sm font-semibold rounded-lg border cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-1"
+                style="color: #433E3F; border-color: #D4A373; focus:ring-color: #D4A373;"
+                data-guitar-player-target="beatsPerMeasureSelect"
+                data-action="change->guitar-player#updateBeatsPerMeasure"
+              >
+                <option value="1" selected>1번</option>
+                <option value="2">2번</option>
+                <option value="3">3번</option>
+                <option value="4">4번</option>
+              </select>
+            </div>
+            <%# 반복 횟수 드롭다운 %>
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+              <label class="text-sm font-semibold whitespace-nowrap" style="color: #433E3F;">반복:</label>
+              <select 
+                class="px-3 py-1.5 text-sm font-semibold rounded-lg border cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-1"
+                style="color: #433E3F; border-color: #D4A373; focus:ring-color: #D4A373;"
+                data-guitar-player-target="repeatCountSelect"
+                data-action="change->guitar-player#updateRepeatCount"
+              >
+                <option value="1" selected>1회</option>
+                <option value="2">2회</option>
+                <option value="3">3회</option>
+                <option value="4">4회</option>
+              </select>
+            </div>
+            <%# 재생 버튼 %>
+            <button 
+              type="button"
+              class="play-all-button bg-green-500 hover:bg-green-600 text-white rounded-full p-2 transition-colors flex items-center justify-center shadow-md w-full sm:w-auto mobile-play-button"
+              data-guitar-player-target="button"
+              data-action="click->guitar-player#playAll touchstart->guitar-player#playAll"
+              title="전체 코드 진행 재생"
+              style="background-color: #1e3a8a;"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="space-y-6">
+          <% @lyrics_lines.each_slice(4).each do |lines_group| %>
+            <div class="bg-gray-50 rounded-lg p-4 border w-full" style="border-color: #D4A37333;">
+              <%# 코드명과 바 표시 %>
+              <div class="relative w-full mb-2" style="min-height: 48px;">
+                <%# 가로 바 (전체 너비, 세로 구분선 중앙에 위치) %>
+                <div class="absolute top-1/2 left-0 right-0 h-px transform -translate-y-1/2" style="background-color: #D4A373;"></div>
+                
+                <%# 세로 구분선과 코드명들 %>
+                <div class="flex items-center w-full relative">
+                  <%# 시작 | %>
+                  <div class="flex flex-col items-center justify-center relative z-10">
+                    <div class="w-px h-12" style="background-color: #D4A373;"></div>
+                  </div>
+                  
+                  <% lines_group.each_with_index do |line, group_index| %>
+                    <% line_index = (@lyrics_lines.index(line) || 0) %>
+                    <% chord_index = line_index % @progression.length %>
+                    <% chord = @progression[chord_index] %>
+                    <% is_last = group_index == lines_group.length - 1 %>
+                    <% segment_width = is_last ? 'flex-1' : 'w-1/4' %>
+                    
+                    <div class="<%= segment_width %> flex items-center relative" style="min-height: 48px;">
+                      <%# 코드명 (세그먼트 시작 부분, 가로 바 위) %>
+                      <div class="absolute top-0 left-2 z-20" style="transform: translateY(-50%);">
+                        <span class="px-2 py-0.5 rounded font-bold text-sm" style="background-color: #D4A373; color: white;">
+                          <%= chord[:name] %>
+                        </span>
+                      </div>
+                      
+                      <%# 세로 구분선 (마지막이 아니면 오른쪽 끝에) %>
+                      <% unless is_last %>
+                        <div class="flex flex-col items-center justify-center relative z-10 ml-auto">
+                          <div class="w-px h-12" style="background-color: #D4A373;"></div>
+                        </div>
+                      <% end %>
+                    </div>
+                  <% end %>
+                  
+                  <%# 끝 | %>
+                  <div class="flex flex-col items-center justify-center relative z-10">
+                    <div class="w-px h-12" style="background-color: #D4A373;"></div>
+                  </div>
+                </div>
+              </div>
+              
+              <%# 가사 표시 (아래쪽) %>
+              <div class="flex items-center w-full">
+                <% lines_group.each_with_index do |line, group_index| %>
+                  <% is_last = group_index == lines_group.length - 1 %>
+                  <% segment_width = is_last ? 'flex-1' : 'w-1/4' %>
+                  
+                  <div class="<%= segment_width %> text-sm text-gray-800 font-mono text-left pl-2">
+                    <%= line %>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% end %>
+
+<style>
+  @media (max-width: 640px) {
+    .mobile-play-button {
+      background-color: #1e3a8a !important;
+    }
+    .mobile-play-button:hover {
+      background-color: #1e40af !important;
+    }
+  }
+</style>

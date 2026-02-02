@@ -1,0 +1,89 @@
+<div class="max-w-md mx-auto px-2 sm:px-4 py-6 sm:py-12">
+  <div class="bg-white rounded-xl shadow-lg border p-4 sm:p-8" style="border-color: #D4A37333;">
+    <h2 class="text-2xl sm:text-3xl font-bold mb-2 text-center" style="color: #433E3F;">로그인</h2>
+    <p class="text-gray-600 text-sm text-center mb-6 sm:mb-8">게시판을 이용하시려면 로그인해주세요</p>
+
+    <%= form_for(resource, as: resource_name, url: session_path(resource_name), html: { class: "space-y-4 sm:space-y-6", id: "login-form" }) do |f| %>
+      <% if alert %>
+        <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+          <%= alert %>
+        </div>
+      <% end %>
+
+      <div>
+        <%= f.label :email, "이메일 주소", class: "block text-sm font-semibold text-gray-700 mb-2" %>
+        <div class="text-xs text-gray-500 mb-2 p-2 rounded" style="background-color: #FAF9F6;">
+          <p>📧 <strong>필수 정보:</strong> 회원가입 시 사용한 이메일 주소를 입력해주세요</p>
+        </div>
+        <%= f.email_field :email, autofocus: true, autocomplete: "email", 
+            class: "w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 transition text-base",
+            style: "focus:ring-color: #D4A373; focus:border-color: #D4A373;",
+            onfocus: "this.style.borderColor='#D4A373'; this.style.boxShadow='0 0 0 2px rgba(212, 163, 115, 0.2)';",
+            onblur: "this.style.borderColor='#d1d5db'; this.style.boxShadow='none';",
+            placeholder: "example@email.com", id: "user_email" %>
+      </div>
+
+      <div>
+        <%= f.label :password, "비밀번호", class: "block text-sm font-semibold text-gray-700 mb-2" %>
+        <div class="text-xs text-gray-500 mb-2 p-2 rounded" style="background-color: #FAF9F6;">
+          <p>🔒 <strong>필수 정보:</strong> 회원가입 시 설정한 비밀번호를 입력해주세요</p>
+        </div>
+        <%= f.password_field :password, autocomplete: "current-password",
+            class: "w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 transition text-base",
+            style: "focus:ring-color: #D4A373; focus:border-color: #D4A373;",
+            onfocus: "this.style.borderColor='#D4A373'; this.style.boxShadow='0 0 0 2px rgba(212, 163, 115, 0.2)';",
+            onblur: "this.style.borderColor='#d1d5db'; this.style.boxShadow='none';",
+            placeholder: "비밀번호 입력", id: "user_password" %>
+      </div>
+
+      <% if devise_mapping.rememberable? %>
+        <div class="flex items-center mb-4">
+          <%= f.check_box :remember_me, class: "h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded" %>
+          <%= f.label :remember_me, "로그인 상태 유지", class: "ml-2 block text-sm text-gray-600" %>
+        </div>
+      <% end %>
+
+      <div class="flex justify-end">
+        <%= f.submit "로그인", class: "w-full sm:w-auto px-6 py-3 bg-slate-700 text-white font-semibold rounded-lg text-base", style: "background-color: #475569; color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 600; font-size: 1rem; border: none; cursor: pointer; min-height: 44px;" %>
+      </div>
+    <% end %>
+
+    <div class="mt-6 pt-6 border-t border-gray-200">
+      <div class="text-center">
+        <p class="text-sm text-gray-600 mb-4">계정이 없으신가요?</p>
+        <% link_style = "color: #16A34A;" %>
+        <% link_hover_in = "this.style.color='#14532D';" %>
+        <% link_hover_out = "this.style.color='#16A34A';" %>
+        <%= link_to "회원가입하기", "/users/sign_up", style: link_style, class: "font-semibold text-sm", onmouseover: link_hover_in, onmouseout: link_hover_out %>
+      </div>
+      <div class="text-center mt-4">
+        <%= link_to "비밀번호를 잊으셨나요?", "/users/password/new", class: "text-sm text-gray-500 hover:text-gray-700" %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('login-form');
+    const emailField = document.getElementById('user_email');
+    const passwordField = document.getElementById('user_password');
+    
+    if (form && emailField && passwordField) {
+      // 엔터 키로 로그인
+      emailField.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          passwordField.focus();
+        }
+      });
+      
+      passwordField.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          form.requestSubmit();
+        }
+      });
+    }
+  });
+</script>

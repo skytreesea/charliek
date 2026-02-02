@@ -1,0 +1,100 @@
+<% tabs ||= [] %>
+<% chord_name ||= '' %>
+<% max_fret = tabs.compact.max || 5 %>
+
+<div class="chord-tab-container bg-white rounded-lg border-2 p-2 sm:p-3 shadow-sm" style="border-color: #D4A37333; max-width: 100%;">
+  <% if chord_name.present? %>
+    <h3 class="text-sm font-bold mb-2 text-center" style="color: #433E3F;"><%= chord_name %></h3>
+  <% end %>
+  
+  <div class="chord-tab-grid overflow-x-auto" style="max-width: 100%;">
+    <div class="grid gap-0.5 mb-1" style="grid-template-columns: 25px repeat(<%= max_fret + 1 %>, minmax(20px, 1fr)); max-width: 100%;">
+      <div class="text-[10px] font-semibold text-gray-500 text-center"></div>
+      <% (0..max_fret).each do |fret| %>
+        <div class="text-[10px] font-semibold text-gray-500 text-center">
+          <%= fret == 0 ? 'O' : fret %>
+        </div>
+      <% end %>
+    </div>
+    
+    <% string_names = ['E', 'A', 'D', 'G', 'B', 'E'] %>
+    <% tabs.reverse.each_with_index do |fret_position, index| %>
+      <% string_number = index + 1 %>
+      <% string_name = string_names[5 - index] %>
+      
+      <div class="grid gap-0.5 items-center mb-0.5" style="grid-template-columns: 25px repeat(<%= max_fret + 1 %>, minmax(20px, 1fr)); max-width: 100%;">
+        <div class="text-[9px] font-bold text-center flex-shrink-0" style="color: #433E3F;">
+          <%= string_number %> <%= string_name %>
+        </div>
+        
+        <% (0..max_fret).each do |fret| %>
+          <div class="relative flex items-center justify-center h-5 border-r border-b" style="border-color: #D4A37366; min-height: 20px;">
+            <% if fret_position.nil? %>
+              <% if fret == 0 %>
+                <span class="text-red-500 font-bold text-xs">✕</span>
+              <% end %>
+            <% elsif fret_position == 0 %>
+              <% if fret == 0 %>
+                <span class="text-green-600 font-bold text-xs">O</span>
+              <% end %>
+            <% elsif fret_position == fret %>
+              <div class="w-4 h-4 rounded-full flex items-center justify-center shadow-sm" style="background-color: #D4A373; color: white;">
+                <span class="text-[10px] font-bold"><%= fret %></span>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+  
+  <div class="mt-2 pt-2 border-t flex flex-wrap gap-2 text-[10px]" style="border-color: #D4A37333;">
+    <div class="flex items-center gap-1">
+      <span class="text-green-600 font-bold">O</span>
+      <span class="text-gray-600">개방현</span>
+    </div>
+    <div class="flex items-center gap-1">
+      <span class="text-red-500 font-bold">✕</span>
+      <span class="text-gray-600">연주 안 함</span>
+    </div>
+    <div class="flex items-center gap-1">
+      <div class="w-2 h-2 rounded-full" style="background-color: #D4A373;"></div>
+      <span class="text-gray-600">프렛 위치</span>
+    </div>
+  </div>
+</div>
+
+<style>
+  .chord-tab-grid {
+    min-width: fit-content;
+    max-width: 100%;
+  }
+  
+  .chord-tab-container {
+    max-width: 100%;
+    overflow: hidden;
+  }
+  
+  @media (max-width: 640px) {
+    .chord-tab-container {
+      padding: 0.5rem;
+      max-width: 100%;
+    }
+    
+    .chord-tab-grid {
+      min-width: auto;
+      max-width: 100%;
+      width: 100%;
+    }
+    
+    .chord-tab-grid > div {
+      max-width: 100%;
+      overflow-x: auto;
+      font-size: 8px;
+    }
+    
+    .chord-tab-grid .grid {
+      grid-template-columns: 20px repeat(var(--fret-count, 5), minmax(15px, 1fr)) !important;
+    }
+  }
+</style>

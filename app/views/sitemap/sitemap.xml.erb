@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  
+  <%# 정적 페이지들 (홈, About, Privacy) %>
+  <% if params[:page].blank? || params[:page].to_i == 0 %>
+    <%# 홈페이지 %>
+    <url>
+      <loc><%= @base_url %></loc>
+      <lastmod><%= Date.current.iso8601 %></lastmod>
+      <changefreq>daily</changefreq>
+      <priority>1.0</priority>
+    </url>
+    
+    <%# About 페이지 %>
+    <url>
+      <loc><%= @base_url %>/about</loc>
+      <lastmod><%= Date.current.iso8601 %></lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>
+    
+    <%# Privacy 페이지 %>
+    <url>
+      <loc><%= @base_url %>/privacy</loc>
+      <lastmod><%= Date.current.iso8601 %></lastmod>
+      <changefreq>monthly</changefreq>
+      <priority>0.5</priority>
+    </url>
+    
+    <%# 카테고리별 게시글 목록 페이지 %>
+    <% (@categories || Post::CATEGORIES).each do |category| %>
+      <url>
+        <loc><%= @base_url %>/posts?category=<%= CGI.escape(category) %></loc>
+        <lastmod><%= Date.current.iso8601 %></lastmod>
+        <changefreq>daily</changefreq>
+        <priority>0.9</priority>
+      </url>
+    <% end %>
+  <% end %>
+  
+  <%# 개별 게시글 (updated_at을 lastmod로 사용) %>
+  <% @posts.each do |post| %>
+    <url>
+      <loc><%= @base_url %><%= post_path(post) %></loc>
+      <lastmod><%= post.updated_at.iso8601 %></lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.7</priority>
+      <%# 게시글에 이미지가 있는 경우 %>
+      <% if post.attachment_file.attached? && post.attachment_file.content_type&.start_with?('image/') %>
+        <image:image>
+          <image:loc><%= @base_url %><%= rails_blob_path(post.attachment_file, only_path: true) %></image:loc>
+          <image:title><%= CGI.escapeHTML(post.title) %></image:title>
+          <image:caption><%= CGI.escapeHTML(post.title) %></image:caption>
+        </image:image>
+      <% end %>
+    </url>
+  <% end %>
+  
+</urlset>

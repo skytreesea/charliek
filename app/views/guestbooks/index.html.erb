@@ -1,0 +1,303 @@
+<div class="max-w-4xl mx-auto px-2 sm:px-4 py-4 sm:py-8">
+  <%# 헤더 영역 %>
+  <div class="mb-6 sm:mb-8">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-2">
+      <h1 class="text-2xl sm:text-3xl font-bold" style="color: #433E3F;">방명록</h1>
+      <div class="flex flex-col gap-1">
+        <%# Google 번역 버튼 %>
+        <div id="google_translate_element_guestbook" class="custom-google-translate"></div>
+        <p class="text-xs text-gray-500 italic">You can choose your language here</p>
+      </div>
+    </div>
+    <p class="text-sm sm:text-base text-gray-600">로그인 없이 이름과 메시지를 남겨주세요. (최대 300자)</p>
+  </div>
+
+  <%# 작성 폼 %>
+  <div class="bg-white rounded-xl shadow-md border p-3 sm:p-4 mb-3 sm:mb-4" style="border-color: #D4A37333;">
+    <h2 class="text-base sm:text-lg font-semibold mb-2 sm:mb-3" style="color: #433E3F;">방명록 작성</h2>
+    
+    <%= form_with model: @guestbook, url: guestbooks_path, local: true, class: "space-y-2 sm:space-y-3" do |f| %>
+      <% if @guestbook.errors.any? %>
+        <div class="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+          <ul class="text-sm text-red-800 space-y-1">
+            <% @guestbook.errors.full_messages.each do |message| %>
+              <li><%= message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <div>
+        <%= f.label :name, "이름", class: "block text-sm font-medium mb-1", style: "color: #433E3F;" %>
+        <%= f.text_field :name, 
+            placeholder: "이름을 입력하세요 (최대 50자)", 
+            maxlength: 50,
+            class: "w-full px-3 py-2 border rounded-lg focus:ring-2 focus:outline-none text-sm",
+            style: "border-color: #D4A37366;",
+            required: true %>
+      </div>
+
+      <div>
+        <%= f.label :content, "메시지", class: "block text-sm font-medium mb-1", style: "color: #433E3F;" %>
+        <%= f.text_area :content, 
+            rows: 5,
+            placeholder: "방명록을 남겨주세요 (최대 300자)", 
+            maxlength: 300,
+            id: "guestbook_content",
+            class: "w-full px-3 py-2 border rounded-lg focus:ring-2 focus:outline-none resize-none text-sm",
+            style: "border-color: #D4A37366;",
+            required: true,
+            oninput: "this.style.height='auto'; this.style.height=(this.scrollHeight)+'px';" %>
+        <div class="mt-1 text-xs text-gray-500 text-right">
+          <span id="char-count">0</span> / 300자
+        </div>
+      </div>
+
+      <%= f.submit "등록하기", 
+          class: "w-full sm:w-auto px-6 py-2 bg-slate-700 text-white rounded-lg font-semibold text-sm hover:bg-slate-600 transition", 
+          style: "background-color: #475569; color: white; padding: 0.5rem 1.5rem; border-radius: 0.5rem; font-weight: 600; font-size: 0.875rem; border: none; cursor: pointer; min-height: 44px;" %>
+    <% end %>
+  </div>
+
+  <%# 방명록 목록 %>
+  <div class="space-y-1 sm:space-y-2">
+    <% if @guestbooks.any? %>
+      <% @guestbooks.each do |guestbook| %>
+        <div class="bg-white rounded-xl shadow-md border p-1.5 sm:p-2" style="border-color: #D4A37333;">
+          <div class="flex justify-between items-start mb-0.5 sm:mb-1">
+            <div class="flex-1">
+              <h3 class="font-semibold text-sm sm:text-base mb-0" style="color: #433E3F;"><%= guestbook.name %></h3>
+              <p class="text-xs text-gray-500"><%= guestbook.created_at.strftime("%Y년 %m월 %d일 %H:%M") %></p>
+            </div>
+            <% if user_signed_in? && current_user.admin? %>
+              <%= button_to "삭제", guestbook_path(guestbook), 
+                  method: :delete, 
+                  class: "px-2 py-0.5 bg-red-600 text-white rounded text-xs hover:bg-red-700 transition", 
+                  data: { confirm: "정말 삭제하시겠습니까?" },
+                  form: { class: "inline" } %>
+            <% end %>
+          </div>
+          <div class="text-xs sm:text-sm text-gray-700 whitespace-pre-wrap break-words leading-tight">
+            <%= simple_format(h(guestbook.content)) %>
+          </div>
+        </div>
+      <% end %>
+    <% else %>
+      <div class="bg-white rounded-xl shadow-md border p-4 sm:p-6 text-center" style="border-color: #D4A37333;">
+        <p class="text-sm text-gray-500">아직 방명록이 없습니다. 첫 번째 방명록을 남겨주세요!</p>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<script>
+  // 글자수 카운터 (Turbo 지원)
+  function initCharCounter() {
+    const textarea = document.getElementById('guestbook_content');
+    const charCount = document.getElementById('char-count');
+    
+    if (textarea && charCount) {
+      function updateCharCount() {
+        const currentLength = textarea.value.length;
+        charCount.textContent = currentLength;
+        
+        if (currentLength > 300) {
+          charCount.style.color = '#ef4444';
+        } else if (currentLength > 250) {
+          charCount.style.color = '#f59e0b';
+        } else {
+          charCount.style.color = '#6b7280';
+        }
+      }
+      
+      // 기존 이벤트 리스너 제거 후 새로 추가 (중복 방지)
+      textarea.removeEventListener('input', updateCharCount);
+      textarea.addEventListener('input', updateCharCount);
+      updateCharCount(); // 초기값 설정
+    }
+  }
+  
+  // DOMContentLoaded와 Turbo 이벤트 모두 처리
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initCharCounter);
+  } else {
+    initCharCounter();
+  }
+  
+  // Turbo 네비게이션 후에도 작동하도록
+  document.addEventListener('turbo:load', initCharCounter);
+  document.addEventListener('turbo:render', initCharCounter);
+</script>
+
+<%# Google 번역 스타일 %>
+<style>
+  /* Google 번역 위젯 커스터마이징 */
+  .custom-google-translate {
+    display: inline-block !important;
+    vertical-align: middle;
+    min-height: 40px;
+    min-width: 150px;
+  }
+  
+  /* Google 번역 요소가 보이도록 보장 */
+  #google_translate_element_guestbook {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  
+  /* Google 번역 드롭다운 스타일 */
+  #google_translate_element_guestbook select,
+  #google_translate_element_guestbook .goog-te-combo {
+    background-color: #FAF9F6 !important;
+    border: 1px solid #D4A37366 !important;
+    border-radius: 0.5rem !important;
+    padding: 0.5rem 2.5rem 0.5rem 0.875rem !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    color: #433E3F !important;
+    cursor: pointer !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23433E3F'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 0.75rem center !important;
+    background-size: 1.125rem !important;
+    min-width: 150px !important;
+    max-width: 200px !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+  }
+  
+  #google_translate_element_guestbook select:hover,
+  #google_translate_element_guestbook .goog-te-combo:hover {
+    border-color: #D4A373 !important;
+    background-color: #FFFFFF !important;
+    box-shadow: 0 2px 4px rgba(212, 163, 115, 0.15) !important;
+  }
+  
+  #google_translate_element_guestbook select:focus,
+  #google_translate_element_guestbook .goog-te-combo:focus {
+    outline: none !important;
+    border-color: #D4A373 !important;
+    box-shadow: 0 0 0 3px rgba(212, 163, 115, 0.2) !important;
+    background-color: #FFFFFF !important;
+  }
+  
+  /* Google 번역 위젯 숨기기 (드롭다운만 표시) */
+  .goog-te-banner-frame,
+  .goog-te-menu-frame {
+    display: none !important;
+  }
+  
+  body {
+    top: 0 !important;
+  }
+  
+  /* 번역 표시 영역 스타일 */
+  #google_translate_element_guestbook .goog-te-gadget {
+    font-family: inherit !important;
+  }
+  
+  #google_translate_element_guestbook .goog-te-gadget-simple {
+    background-color: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+  }
+  
+  /* 언어 선택 드롭다운 아이콘 제거 */
+  #google_translate_element_guestbook .goog-te-gadget-icon {
+    display: none !important;
+  }
+  
+  /* 번역 텍스트 숨기기 */
+  #google_translate_element_guestbook .goog-te-gadget-simple .goog-te-gadget-text {
+    display: none !important;
+  }
+  
+  /* 드롭다운이 보이도록 보장 */
+  #google_translate_element_guestbook .goog-te-combo {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  
+  /* 스킵 링크 숨기기 */
+  .goog-te-banner-frame.skiptranslate {
+    display: none !important;
+  }
+  
+  /* 번역된 페이지에서도 스타일 유지 */
+  body.translated-ltr,
+  body.translated-rtl {
+    top: 0 !important;
+  }
+</style>
+
+<%# Google 번역 스크립트 %>
+<script type="text/javascript">
+function googleTranslateElementInitGuestbook() {
+  // 기존 위젯이 이미 있으면 중복 생성하지 않음
+  var existingElement = document.getElementById('google_translate_element_guestbook');
+  if (existingElement && existingElement.querySelector('.goog-te-combo')) {
+    return;
+  }
+  
+  new google.translate.TranslateElement({
+    pageLanguage: 'ko',
+    includedLanguages: 'en,hi,ja,zh-CN,es,fr',
+    layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+    autoDisplay: false
+  }, 'google_translate_element_guestbook');
+  
+  // 언어 이름을 영어로 표시하도록 설정
+  function updateLanguageNames() {
+    var select = document.querySelector('#google_translate_element_guestbook select, #google_translate_element_guestbook .goog-te-combo');
+    if (select) {
+      var options = select.options || select.querySelectorAll('option');
+      var langNames = {
+        '': 'Select Language',
+        'ko': 'Korean',
+        'en': 'English',
+        'hi': 'Hindi',
+        'ja': 'Japanese',
+        'zh-CN': 'Chinese',
+        'es': 'Spanish',
+        'fr': 'French'
+      };
+      
+      for (var i = 0; i < options.length; i++) {
+        var option = options[i];
+        var langCode = option.value;
+        if (langNames[langCode]) {
+          option.text = langNames[langCode];
+        }
+      }
+    }
+  }
+  
+  // 여러 번 시도하여 Google Translate가 완전히 로드된 후 실행
+  setTimeout(updateLanguageNames, 100);
+  setTimeout(updateLanguageNames, 500);
+  setTimeout(updateLanguageNames, 1000);
+  
+  // Turbo 이벤트 처리
+  document.addEventListener('turbo:load', function() {
+    setTimeout(updateLanguageNames, 100);
+  });
+  document.addEventListener('turbo:render', function() {
+    setTimeout(updateLanguageNames, 100);
+  });
+  
+  // 드롭다운 변경 시에도 업데이트
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(updateLanguageNames, 1500);
+    });
+  } else {
+    setTimeout(updateLanguageNames, 1500);
+  }
+}
+</script>
+<script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInitGuestbook"></script>

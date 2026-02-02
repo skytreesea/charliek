@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <%# Dynamic Title: 컨트롤러에서 설정한 @page_title 우선 사용 %>
+    <% page_title = @page_title || content_for(:title) || "CharlieK" %>
+    <% unless page_title.include?("|") %>
+      <% page_title = "#{page_title} | CharlieK" %>
+    <% end %>
+    <title><%= page_title %></title>
+    
+    <%# Meta Description: 컨트롤러에서 설정한 @meta_description 우선 사용 %>
+    <% meta_description = @meta_description || content_for(:meta_description) || @og_description || "Charlie K Archive - 주식 분석, 문화, 출판, Rails 개발 등 다양한 콘텐츠를 제공합니다." %>
+    <meta name="description" content="<%= meta_description.truncate(160) %>">
+    
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="CharlieK">
+    <meta name="mobile-web-app-capable" content="yes">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <!-- Google AdSense 메타 태그 -->
+    <meta name="google-adsense-account" content="ca-pub-4806760103635874">
+
+    <!-- Google AdSense (최우선 로드: 다른 스크립트보다 먼저) -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4806760103635874" crossorigin="anonymous"></script>
+
+    <%# Open Graph 메타 태그 (페이스북, 트위터 등 소셜 미디어 공유용) %>
+    <% og_title = defined?(@og_title) && @og_title.present? ? @og_title : (content_for(:title) || "CharlieK") %>
+    <meta property="og:title" content="<%= og_title %>">
+    
+    <% og_description = defined?(@og_description) && @og_description.present? ? @og_description : meta_description %>
+    <meta property="og:description" content="<%= og_description.truncate(200) %>">
+    
+    <% if defined?(@og_image) && @og_image.present? %>
+      <meta property="og:image" content="<%= @og_image %>">
+    <% else %>
+      <meta property="og:image" content="<%= "#{request.base_url}/icon.png" %>">
+    <% end %>
+    
+    <% if defined?(@og_url) && @og_url.present? %>
+      <meta property="og:url" content="<%= @og_url %>">
+    <% else %>
+      <meta property="og:url" content="<%= request.base_url %><%= request.path %>">
+    <% end %>
+    
+    <% if defined?(@og_type) && @og_type.present? %>
+      <meta property="og:type" content="<%= @og_type %>">
+    <% else %>
+      <meta property="og:type" content="website">
+    <% end %>
+    <%# 네이버 블로그 검색 시 가독성을 위한 사이트명 설정 %>
+    <meta property="og:site_name" content="Charlie K Archive">
+    
+    <%# Article 메타 태그 (게시물인 경우) %>
+    <% if defined?(@og_type) && @og_type == "article" %>
+      <% if defined?(@article_published_time) && @article_published_time.present? %>
+        <meta property="article:published_time" content="<%= @article_published_time %>">
+      <% end %>
+      <% if defined?(@article_author) && @article_author.present? %>
+        <meta property="article:author" content="<%= @article_author %>">
+      <% end %>
+      <% if defined?(@article_section) && @article_section.present? %>
+        <meta property="article:section" content="<%= @article_section %>">
+      <% end %>
+    <% end %>
+    
+    <%# Twitter Card 메타 태그 %>
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="<%= og_title %>">
+    <meta name="twitter:description" content="<%= og_description.truncate(200) %>">
+    <% if defined?(@og_image) && @og_image.present? %>
+      <meta name="twitter:image" content="<%= @og_image %>">
+    <% else %>
+      <meta name="twitter:image" content="<%= "#{request.base_url}/icon.png" %>">
+    <% end %>
+    <meta name="twitter:site" content="@charliek">
+
+    <%= yield :head %>
+
+    <%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>
+    <%#= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
+
+    <%# Google Fonts preconnect (성능 최적화) %>
+    <% if @font_urls.present? %>
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <% @font_urls.uniq.each do |font_url| %>
+        <%= tag.link rel: "stylesheet", href: font_url %>
+      <% end %>
+    <% end %>
+
+    <%# 동적 CSS 변수 설정 %>
+    <style>
+      :root {
+        --theme-bg: <%= @theme_colors && @theme_colors[:bg] ? @theme_colors[:bg] : '#FAF9F6' %>;
+        --theme-card: <%= @theme_colors && @theme_colors[:card] ? @theme_colors[:card] : '#FFFFFF' %>;
+        --theme-primary: <%= @theme_colors && @theme_colors[:primary] ? @theme_colors[:primary] : '#D4A373' %>;
+        --theme-text: <%= @theme_colors && @theme_colors[:text] ? @theme_colors[:text] : '#433E3F' %>;
+        --theme-border: <%= @theme_colors && @theme_colors[:border] ? @theme_colors[:border] : 'rgba(212, 163, 115, 0.2)' %>;
+        --theme-hover: <%= @theme_colors && @theme_colors[:hover] ? @theme_colors[:hover] : 'rgba(212, 163, 115, 0.15)' %>;
+        --font-heading: <%= @theme_fonts && @theme_fonts[:heading] ? @theme_fonts[:heading] : 'system-ui, sans-serif' %>;
+        --font-body: <%= @theme_fonts && @theme_fonts[:body] ? @theme_fonts[:body] : 'system-ui, sans-serif' %>;
+        --font-button: <%= @theme_fonts && @theme_fonts[:button] ? @theme_fonts[:button] : 'system-ui, sans-serif' %>;
+        --font-link: <%= @theme_fonts && @theme_fonts[:link] ? @theme_fonts[:link] : 'system-ui, sans-serif' %>;
+        --font-nav: <%= @theme_fonts && @theme_fonts[:nav] ? @theme_fonts[:nav] : 'system-ui, sans-serif' %>;
+        --font-code: <%= @theme_fonts && @theme_fonts[:code] ? @theme_fonts[:code] : "'Courier New', monospace" %>;
+        --font-footer: <%= @theme_fonts && @theme_fonts[:footer] ? @theme_fonts[:footer] : 'system-ui, sans-serif' %>;
+      }
+      
+      /* 다크모드 스타일 */
+      html[data-theme="dark"] {
+        --theme-bg: #1a1a1a;
+        --theme-card: #2d2d2d;
+        --theme-text: #e5e5e5;
+        --theme-border: rgba(212, 163, 115, 0.3);
+        --theme-hover: rgba(212, 163, 115, 0.2);
+      }
+      
+      /* 다크모드: 인기글/최신글 제목 바 스타일 */
+      html[data-theme="dark"] .sidebar-section-title {
+        color: white !important;
+        background-color: #8B4513 !important;
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.5rem;
+      }
+      
+      /* 다크모드: 카테고리 드롭다운 버튼 스타일 */
+      html[data-theme="dark"] .category-dropdown-button {
+        background-color: #654321 !important;
+        color: white !important;
+      }
+      
+      /* 다크모드: 카테고리 드롭다운 메뉴 스타일 */
+      html[data-theme="dark"] .category-dropdown-menu {
+        background-color: #A0522D !important;
+        border-color: #654321 !important;
+      }
+      
+      /* 다크모드: 카테고리 드롭다운 메뉴 항목 스타일 */
+      html[data-theme="dark"] .category-dropdown-item {
+        color: white !important;
+      }
+      
+      html[data-theme="dark"] .category-dropdown-item:hover {
+        background-color: #8B4513 !important;
+      }
+      
+      /* 기본 배경 - 가장 중요! */
+      html[data-theme="dark"],
+      html[data-theme="dark"] body {
+        background-color: #1a1a1a !important;
+        color: #e5e5e5 !important;
+      }
+      
+      /* 모든 요소의 기본 텍스트 색상 */
+      html[data-theme="dark"] * {
+        color: inherit;
+      }
+      
+      /* 네비게이션 */
+      html[data-theme="dark"] nav {
+        background-color: #2d2d2d !important;
+        border-color: rgba(212, 163, 115, 0.3) !important;
+        color: #e5e5e5 !important;
+      }
+      
+      /* 배경색 클래스들 - 강제 적용 */
+      html[data-theme="dark"] .bg-white,
+      html[data-theme="dark"] .bg-gray-50,
+      html[data-theme="dark"] .bg-blue-50,
+      html[data-theme="dark"] .bg-gray-100,
+      html[data-theme="dark"] .bg-gray-200,
+      html[data-theme="dark"] .bg-gray-300 {
+        background-color: #2d2d2d !important;
+        color: #e5e5e5 !important;
+      }
+      
+      /* 텍스트 색상 클래스들 */
+      html[data-theme="dark"] .text-gray-600,
+      html[data-theme="dark"] .text-gray-500,
+      html[data-theme="dark"] .text-gray-700,
+      html[data-theme="dark"] .text-gray-800,
+      html[data-theme="dark"] .text-gray-900,
+      html[data-theme="dark"] .text-black {
+        color: #e5e5e5 !important;
+      }
+      
+      html[data-theme="dark"] .text-gray-400 {
+        color: #a0a0a0 !important;
+      }
+      
+      /* 입력 필드 */
+      html[data-theme="dark"] input[type="text"],
+      html[data-theme="dark"] input[type="email"],
+      html[data-theme="dark"] input[type="password"],
+      html[data-theme="dark"] input[type="number"],
+      html[data-theme="dark"] input[type="search"],
+      html[data-theme="dark"] textarea,
+      html[data-theme="dark"] select {
+        background-color: #2d2d2d !important;
+        color: #e5e5e5 !important;
+        border-color: rgba(212, 163, 115, 0.3) !important;
+      }
+      
+      html[data-theme="dark"] input::placeholder,
+      html[data-theme="dark"] textarea::placeholder {
+        color: #a0a0a0 !important;
+      }
+      
+      /* 카드 및 컨테이너 - 모든 rounded와 shadow 요소 */
+      html[data-theme="dark"] .rounded-xl,
+      html[data-theme="dark"] .rounded-lg,
+      html[data-theme="dark"] .rounded-md,
+      html[data-theme="dark"] .rounded,
+      html[data-theme="dark"] .shadow-lg,
+      html[data-theme="dark"] .shadow-md,
+      html[data-theme="dark"] .shadow-sm,
+      html[data-theme="dark"] .shadow {
+        background-color: #2d2d2d !important;
+        border-color: rgba(212, 163, 115, 0.3) !important;
+        color: #e5e5e5 !important;
+      }
+      
+      /* 모든 div 요소 */
+      html[data-theme="dark"] div {
+        color: #e5e5e5;
+      }
+      
+      /* 테두리 */
+      html[data-theme="dark"] .border,
+      html[data-theme="dark"] .border-2,
+      html[data-theme="dark"] .border-t,
+      html[data-theme="dark"] .border-b,
+      html[data-theme="dark"] .border-gray-300,
+      html[data-theme="dark"] .border-gray-200 {
+        border-color: rgba(212, 163, 115, 0.3) !important;
+      }
+      
+      /* 링크 */
+      html[data-theme="dark"] a {
+        color: #e5e5e5 !important;
+      }
+      
+      html[data-theme="dark"] a:hover {
+        color: #D4A373 !important;
+      }
+      
+      /* 버튼 - 모든 버튼 스타일 */
+      html[data-theme="dark"] button {
+        background-color: #2d2d2d !important;
+        color: #e5e5e5 !important;
+        border-color: rgba(212, 163, 115, 0.3) !important;
+      }
+      
+      /* 특정 배경색이 있는 버튼은 유지하되 텍스트만 밝게 */
+      html[data-theme="dark"] button[style*="background-color: #D4A373"],
+      html[data-theme="dark"] button[style*="background-color:#D4A373"],
+      html[data-theme="dark"] button[style*="background-color: #4A90E2"],
+      html[data-theme="dark"] button[style*="background-color:#4A90E2"],
+      html[data-theme="dark"] button[style*="background-color: #FF8C00"],
+      html[data-theme="dark"] button[style*="background-color:#FF8C00"] {
+        color: white !important;
+      }
+      
+      /* 푸터 */
+      html[data-theme="dark"] footer {
+        background-color: #2d2d2d !important;
+        color: #e5e5e5 !important;
+        border-color: rgba(212, 163, 115, 0.3) !important;
+      }
+      
+      /* 코드 블록 */
+      html[data-theme="dark"] code,
+      html[data-theme="dark"] pre {
+        background-color: #1a1a1a !important;
+        color: #e5e5e5 !important;
+        border-color: rgba(212, 163, 115, 0.3) !important;
+      }
+      
+      /* 테이블 */
+      html[data-theme="dark"] table {
+        background-color: #2d2d2d !important;
+        color: #e5e5e5 !important;
+      }
+      
+      html[data-theme="dark"] th,
+      html[data-theme="dark"] td {
+        border-color: rgba(212, 163, 115, 0.3) !important;
+        color: #e5e5e5 !important;
+      }
+      
+      /* 제목 요소들 */
+      html[data-theme="dark"] h1,
+      html[data-theme="dark"] h2,
+      html[data-theme="dark"] h3,
+      html[data-theme="dark"] h4,
+      html[data-theme="dark"] h5,
+      html[data-theme="dark"] h6 {
+        color: #e5e5e5 !important;
+      }
+      
+      /* 리스트 */
+      html[data-theme="dark"] ul,
+      html[data-theme="dark"] ol,
+      html[data-theme="dark"] li {
+        color: #e5e5e5 !important;
+      }
+      
+      /* p 태그 */
+      html[data-theme="dark"] p {
+        color: #e5e5e5 !important;
+      }
+      
+      /* span 태그 */
+      html[data-theme="dark"] span {
+        color: inherit;
+      }
+      
+      /* 인라인 스타일이 있는 요소들 - 강제 오버라이드 */
+      html[data-theme="dark"] [style*="background-color: #FFFFFF"],
+      html[data-theme="dark"] [style*="background-color:#FFFFFF"],
+      html[data-theme="dark"] [style*="background-color: #FAF9F6"],
+      html[data-theme="dark"] [style*="background-color:#FAF9F6"] {
+        background-color: #2d2d2d !important;
+        color: #e5e5e5 !important;
+      }
+      
+      html[data-theme="dark"] [style*="color: #433E3F"],
+      html[data-theme="dark"] [style*="color:#433E3F"],
+      html[data-theme="dark"] [style*="color: #9CA3AF"],
+      html[data-theme="dark"] [style*="color:#9CA3AF"],
+      html[data-theme="dark"] [style*="color: #6B7280"],
+      html[data-theme="dark"] [style*="color:#6B7280"] {
+        color: #e5e5e5 !important;
+      }
+      
+      html[data-theme="dark"] [style*="border-color: #D4A373"],
+      html[data-theme="dark"] [style*="border-color:#D4A373"],
+      html[data-theme="dark"] [style*="border-color: #D4A37333"],
+      html[data-theme="dark"] [style*="border-color:#D4A37333"] {
+        border-color: rgba(212, 163, 115, 0.3) !important;
+      }
+      
+      /* 배경 그라디언트 */
+      html[data-theme="dark"] [style*="background: linear-gradient"],
+      html[data-theme="dark"] [style*="background:linear-gradient"] {
+        background: #2d2d2d !important;
+      }
+      
+      /* section, article, main, aside */
+      html[data-theme="dark"] section,
+      html[data-theme="dark"] article,
+      html[data-theme="dark"] main,
+      html[data-theme="dark"] aside {
+        background-color: transparent !important;
+        color: #e5e5e5 !important;
+      }
+      
+      /* 게시판 영역 - 어두운 브라운톤 배경 */
+      html[data-theme="dark"] .bg-white.rounded-xl,
+      html[data-theme="dark"] .bg-white.rounded-lg,
+      html[data-theme="dark"] .bg-white.rounded-md,
+      html[data-theme="dark"] .bg-white.rounded {
+        background-color: #3a2e22 !important; /* 어두운 브라운톤 */
+        color: #e5e5e5 !important;
+      }
+      
+      /* 게시판 내부 행/항목 - 약간 더 밝은 브라운톤 */
+      html[data-theme="dark"] [style*="background-color: white"],
+      html[data-theme="dark"] [style*="background-color:#FFFFFF"],
+      html[data-theme="dark"] [style*="background-color: white;"],
+      html[data-theme="dark"] [style*="background-color:#FFFFFF;"] {
+        background-color: #3a2e22 !important; /* 어두운 브라운톤 */
+        color: #e5e5e5 !important;
+      }
+      
+      /* 게시판 호버 효과 - 약간 밝은 브라운톤 */
+      html[data-theme="dark"] [onmouseover*="backgroundColor='#FAF9F6'"],
+      html[data-theme="dark"] [onmouseover*="backgroundColor=\"#FAF9F6\""] {
+        transition: background-color 0.2s ease;
+      }
+      
+      html[data-theme="dark"] [onmouseover*="backgroundColor='#FAF9F6'"]:hover,
+      html[data-theme="dark"] [onmouseover*="backgroundColor=\"#FAF9F6\""]:hover {
+        background-color: #4a3d30 !important; /* 호버 시 약간 밝은 브라운톤 */
+      }
+      
+      /* 게시판 내부 텍스트 - 밝게 */
+      html[data-theme="dark"] .bg-white *,
+      html[data-theme="dark"] [style*="background-color: white"] *,
+      html[data-theme="dark"] [style*="background-color:#FFFFFF"] * {
+        color: #e5e5e5 !important;
+      }
+      
+      /* 게시판 제목과 텍스트 */
+      html[data-theme="dark"] .bg-white h1,
+      html[data-theme="dark"] .bg-white h2,
+      html[data-theme="dark"] .bg-white h3,
+      html[data-theme="dark"] .bg-white p,
+      html[data-theme="dark"] .bg-white span,
+      html[data-theme="dark"] .bg-white div,
+      html[data-theme="dark"] [style*="background-color: white"] h1,
+      html[data-theme="dark"] [style*="background-color: white"] h2,
+      html[data-theme="dark"] [style*="background-color: white"] h3,
+      html[data-theme="dark"] [style*="background-color: white"] p,
+      html[data-theme="dark"] [style*="background-color: white"] span,
+      html[data-theme="dark"] [style*="background-color: white"] div {
+        color: #e5e5e5 !important;
+      }
+      
+      /* 게시판 내부 링크 */
+      html[data-theme="dark"] .bg-white a,
+      html[data-theme="dark"] [style*="background-color: white"] a {
+        color: #e5e5e5 !important;
+      }
+      
+      html[data-theme="dark"] .bg-white a:hover,
+      html[data-theme="dark"] [style*="background-color: white"] a:hover {
+        color: #D4A373 !important;
+      }
+      
+      /* 게시판 내부 입력 필드 */
+      html[data-theme="dark"] .bg-white input,
+      html[data-theme="dark"] .bg-white textarea,
+      html[data-theme="dark"] .bg-white select,
+      html[data-theme="dark"] [style*="background-color: white"] input,
+      html[data-theme="dark"] [style*="background-color: white"] textarea,
+      html[data-theme="dark"] [style*="background-color: white"] select {
+        background-color: #2d2418 !important; /* 더 어두운 브라운톤 */
+        color: #e5e5e5 !important;
+        border-color: rgba(212, 163, 115, 0.3) !important;
+      }
+      
+      /* 게시글 상세 페이지의 컨텐츠 영역 */
+      html[data-theme="dark"] [style*="background-color: #FAF9F6"],
+      html[data-theme="dark"] [style*="background-color:#FAF9F6"] {
+        background-color: #3a2e22 !important; /* 어두운 브라운톤 */
+        color: #e5e5e5 !important;
+      }
+      
+      html[data-theme="dark"] [style*="background-color: #FAF9F6"] *,
+      html[data-theme="dark"] [style*="background-color:#FAF9F6"] * {
+        color: #e5e5e5 !important;
+      }
+      
+      /* 주식 타임머신 사용법 안내 영역 - 어두운 브라운톤 */
+      html[data-theme="dark"] .bg-gradient-to-r.from-blue-50,
+      html[data-theme="dark"] .bg-gradient-to-r.from-indigo-50,
+      html[data-theme="dark"] .from-blue-50,
+      html[data-theme="dark"] .to-indigo-50 {
+        background: #3a2e22 !important; /* 어두운 브라운톤 배경 */
+        color: #e5e5e5 !important;
+      }
+      
+      /* 주식 타임머신 사용법 안내 내부 상자들 - 약간 다른 브라운톤으로 차별화 */
+      html[data-theme="dark"] .bg-gradient-to-r.from-blue-50 .bg-white,
+      html[data-theme="dark"] .bg-gradient-to-r.from-indigo-50 .bg-white,
+      html[data-theme="dark"] .from-blue-50 .bg-white,
+      html[data-theme="dark"] .to-indigo-50 .bg-white {
+        background-color: #4a3d30 !important; /* 약간 밝은 브라운톤 */
+        color: #e5e5e5 !important;
+        border-color: rgba(212, 163, 115, 0.3) !important;
+      }
+      
+      /* 주식 타임머신 사용법 안내 내부 텍스트 */
+      html[data-theme="dark"] .bg-gradient-to-r.from-blue-50 *,
+      html[data-theme="dark"] .bg-gradient-to-r.from-indigo-50 *,
+      html[data-theme="dark"] .from-blue-50 *,
+      html[data-theme="dark"] .to-indigo-50 * {
+        color: #e5e5e5 !important;
+      }
+      
+      /* 주식 타임머신 경고 상자 (bg-yellow-50) - 또 다른 브라운톤 */
+      html[data-theme="dark"] .bg-yellow-50 {
+        background-color: #4d3e2a !important; /* 노란색 계열의 어두운 브라운톤 */
+        color: #e5e5e5 !important;
+        border-color: rgba(212, 163, 115, 0.4) !important;
+      }
+      
+      html[data-theme="dark"] .bg-yellow-50 * {
+        color: #e5e5e5 !important;
+      }
+      
+      html[data-theme="dark"] .border-yellow-200 {
+        border-color: rgba(212, 163, 115, 0.4) !important;
+      }
+      
+      body {
+        font-family: var(--font-body);
+        color: var(--theme-text);
+        transition: background-color 0.3s ease, color 0.3s ease;
+      }
+      
+      /* 다크모드에서 body의 인라인 스타일 오버라이드 */
+      html[data-theme="dark"] body[style*="background-color"] {
+        background-color: #1a1a1a !important;
+      }
+      
+      html[data-theme="dark"] body[style*="color"] {
+        color: #e5e5e5 !important;
+      }
+      h1, h2, h3, h4, h5, h6 {
+        font-family: var(--font-heading);
+        color: var(--theme-text);
+      }
+      button, input[type="submit"], input[type="button"] {
+        font-family: var(--font-button);
+      }
+      a {
+        font-family: var(--font-link);
+      }
+      nav {
+        font-family: var(--font-nav);
+        transition: background-color 0.3s ease, border-color 0.3s ease;
+      }
+      code, pre {
+        font-family: var(--font-code);
+      }
+      footer {
+        font-family: var(--font-footer);
+      }
+    </style>
+
+    <%# Includes all stylesheet files in app/assets/stylesheets %>
+    <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %> 
+    <%= javascript_importmap_tags %>
+    <%= javascript_include_tag "https://www.gstatic.com/charts/loader.js" %>
+    <%= javascript_include_tag "chartkick" %> 
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-5BWBK5CX');</script>
+    <!-- End Google Tag Manager -->
+    
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-CS6CGCFQ98"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-CS6CGCFQ98');
+    </script>
+  </head>
+
+  <body class="flex flex-col min-h-screen overflow-x-hidden" style="background-color: var(--theme-bg);">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5BWBK5CX"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+    
+    <%# 네비게이션 메뉴 %>
+    <nav class="bg-white border-b-2 shadow-sm sticky top-0 z-50" style="border-color: var(--theme-border);">
+      <div class="container mx-auto px-1 sm:px-2">
+        <%# 첫 번째 줄: 로고 + 게시판 메뉴 + (데스크톱) 로그인/My/관리 등 (오른쪽 끝) %>
+        <div class="flex items-center h-10 sm:h-12">
+          <div class="flex items-center space-x-2 sm:space-x-4 flex-1 min-w-0">
+            <% is_posts_active = request.path == '/' || request.path.start_with?('/posts') %>
+            <% is_home_active = request.path.start_with?('/home') %>
+            <% is_guestbooks_active = request.path.start_with?('/guestbooks') %>
+            <%= link_to "/", class: "flex items-center transition-opacity hover:opacity-80 flex-shrink-0" do %>
+              <img src="<%= defined?(@logo_url) ? @logo_url : '/icon.png' %>" alt="Charlie K" class="h-12 sm:h-16 w-12 sm:w-16 object-contain" width="64" height="64" style="aspect-ratio: 1 / 1; display: block;" onerror="this.src='/icon.png';">
+            <% end %>
+            <%# 카테고리 메뉴 (항상 표시) - 모바일에서 가로 스크롤 가능 %>
+            <div class="flex items-center flex-1 min-w-0 overflow-x-auto" style="scrollbar-width: thin; scrollbar-color: #D4A37333 transparent; -ms-overflow-style: -ms-autohiding-scrollbar;">
+              <style>
+                .category-nav-scroll::-webkit-scrollbar { 
+                  height: 4px; 
+                }
+                .category-nav-scroll::-webkit-scrollbar-track { 
+                  background: transparent; 
+                }
+                .category-nav-scroll::-webkit-scrollbar-thumb { 
+                  background-color: #D4A37333; 
+                  border-radius: 2px; 
+                }
+                .category-nav-scroll::-webkit-scrollbar-thumb:hover { 
+                  background-color: #D4A37366; 
+                }
+                .category-nav-scroll { 
+                  -ms-overflow-style: -ms-autohiding-scrollbar; 
+                  scrollbar-width: thin; 
+                  scrollbar-color: #D4A37333 transparent;
+                }
+                .category-nav-item {
+                  transition: background-color 0.2s ease, color 0.2s ease;
+                  cursor: pointer;
+                }
+                .category-nav-item:hover {
+                  background-color: var(--theme-hover) !important;
+                }
+              </style>
+              <div class="category-nav-scroll flex items-center space-x-1 sm:space-x-2 min-w-max px-1">
+                <% categories = ["주식", "문화", "출판", "Rails", "자유게시판", "생각들"] %>
+                <% current_category = params[:category] || (is_posts_active ? "주식" : nil) %>
+                <% categories.each do |category| %>
+                  <% cat_style = current_category == category ? "background-color: var(--theme-primary); color: white;" : "background-color: var(--theme-bg); color: var(--theme-text);" %>
+                  <%= link_to category, "/posts?category=#{CGI.escape(category)}", 
+                      class: "category-nav-item px-2 sm:px-3 py-1 sm:py-1.5 rounded-md font-semibold text-xs sm:text-sm whitespace-nowrap transition-all flex-shrink-0 #{current_category == category ? 'shadow-sm' : ''}", 
+                      style: cat_style %>
+                <% end %>
+              </div>
+            </div>
+          </div>
+          <%# 데스크톱에서만 표시: 로그인/My/관리 등 (오른쪽 끝) %>
+          <div class="hidden md:flex items-center justify-end space-x-1 ml-2">
+            <% if user_signed_in? %>
+              <span class="text-xs font-semibold" style="color: var(--theme-text);"><%= current_user.display_name %>(<%= current_user.role_display_name %>)</span>
+              <% if current_user&.admin? %>
+                <% is_admin_active = request.path.start_with?('/admin') %>
+                <% is_users_active = request.path.start_with?('/admin/users') %>
+                <% is_design_active = request.path.start_with?('/admin/design') %>
+                <% is_home_settings_active = request.path.start_with?('/admin/home') %>
+                <% is_uploads_active = request.path.start_with?('/admin/uploads') %>
+                <div class="relative inline-block">
+                  <% admin_style = "color: var(--theme-text);" + (is_admin_active ? " background-color: var(--theme-bg); border-color: var(--theme-primary);" : "") %>
+                  <button id="admin-menu-button-desktop" class="text-xs font-semibold px-0.5 py-0.5 rounded transition border-b-2 flex items-center gap-0.5" style="<%= admin_style %>" onclick="toggleAdminMenuDesktop()">
+                    관리
+                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                  </button>
+                  <div id="admin-menu-desktop" class="hidden absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border z-50" style="border-color: var(--theme-border);">
+                    <% if current_user.super_admin? %>
+                      <%= link_to "/admin/home", class: "block px-4 py-2 text-sm transition #{is_home_settings_active ? 'font-semibold' : ''}", style: "color: var(--theme-text); #{is_home_settings_active ? 'background-color: var(--theme-bg);' : ''}", onmouseover: "this.style.backgroundColor='var(--theme-hover)';", onmouseout: "this.style.backgroundColor='#{is_home_settings_active ? 'var(--theme-bg)' : 'transparent'}';" do %>
+                        메인화면
+                      <% end %>
+                      <%= link_to "/admin/users", class: "block px-4 py-2 text-sm transition #{is_users_active ? 'font-semibold' : ''}", style: "color: var(--theme-text); #{is_users_active ? 'background-color: var(--theme-bg);' : ''}", onmouseover: "this.style.backgroundColor='var(--theme-hover)';", onmouseout: "this.style.backgroundColor='#{is_users_active ? 'var(--theme-bg)' : 'transparent'}';" do %>
+                        회원관리
+                      <% end %>
+                      <%= link_to "/admin/design", class: "block px-4 py-2 text-sm transition #{is_design_active ? 'font-semibold' : ''}", style: "color: var(--theme-text); #{is_design_active ? 'background-color: var(--theme-bg);' : ''}", onmouseover: "this.style.backgroundColor='var(--theme-hover)';", onmouseout: "this.style.backgroundColor='#{is_design_active ? 'var(--theme-bg)' : 'transparent'}';" do %>
+                        디자인
+                      <% end %>
+                    <% end %>
+                    <%= link_to "/admin/uploads", class: "block px-4 py-2 text-sm transition #{current_user.super_admin? ? '' : 'rounded-b-lg'} #{is_uploads_active ? 'font-semibold' : ''}", style: "color: var(--theme-text); #{is_uploads_active ? 'background-color: var(--theme-bg);' : ''}", onmouseover: "this.style.backgroundColor='var(--theme-hover)';", onmouseout: "this.style.backgroundColor='#{is_uploads_active ? 'var(--theme-bg)' : 'transparent'}';" do %>
+                      이미지 업로드
+                    <% end %>
+                  </div>
+                </div>
+                <script>
+                  function toggleAdminMenuDesktop() {
+                    const menu = document.getElementById('admin-menu-desktop');
+                    menu.classList.toggle('hidden');
+                  }
+                  // 메뉴 외부 클릭 시 닫기
+                  document.addEventListener('click', function(event) {
+                    const button = document.getElementById('admin-menu-button-desktop');
+                    const menu = document.getElementById('admin-menu-desktop');
+                    if (button && menu && !button.contains(event.target) && !menu.contains(event.target)) {
+                      menu.classList.add('hidden');
+                    }
+                  });
+                </script>
+              <% end %>
+              <%# My 버튼 + 냥(코인) 표시 - 푸른색 계열 %>
+              <%= link_to "My", "/nickname/edit", class: "text-xs font-semibold px-0.5 py-0.5 rounded transition", style: "background-color: #4A90E2; color: white; display: inline-block; text-decoration: none;", onmouseover: "this.style.backgroundColor='#357ABD';", onmouseout: "this.style.backgroundColor='#4A90E2';" %>
+              <span class="text-xs font-semibold px-0.5 py-0.5 rounded" style="background-color: #E8D5B7; color: #433E3F;" title="냥 (코인)">🪙 <%= current_user.coins_display %></span>
+              <%= link_to "로그아웃", "/users/sign_out", data: { turbo_method: :delete }, class: "text-xs font-semibold px-0.5 py-0.5 rounded transition", style: "color: var(--theme-text);", onmouseover: "this.style.backgroundColor='var(--theme-hover)';", onmouseout: "this.style.backgroundColor='transparent';" %>
+            <% else %>
+              <%# 로그인 버튼 - 푸른색 계열 %>
+              <%= link_to "로그인", "/users/sign_in", class: "text-xs font-semibold px-0.5 py-0.5 rounded transition", style: "background-color: #4A90E2; color: white; display: inline-block; text-decoration: none;", onmouseover: "this.style.backgroundColor='#357ABD';", onmouseout: "this.style.backgroundColor='#4A90E2';" %>
+              <%# 회원가입 버튼 - 옅은 녹색 계열 %>
+              <%= link_to "회원가입", "/users/sign_up", class: "text-xs font-semibold px-0.5 py-0.5 rounded transition", style: "background-color: #98FB98; color: #2D5016; display: inline-block; text-decoration: none;", onmouseover: "this.style.backgroundColor='#87E887';", onmouseout: "this.style.backgroundColor='#98FB98';" %>
+            <% end %>
+          </div>
+        </div>
+        <%# 두 번째 줄: 첫 번째 줄에 About/방명록/WHB, 두 번째 줄에 로그인/회원가입/관리/별명수정 %>
+        <div class="flex flex-col py-0.5 border-t" style="border-color: var(--theme-border);">
+          <%# 첫 번째 줄: About/방명록/WHB/마이뮤즈(왼쪽) + 방문자수(오른쪽, 관리자만, 데스크톱만) %>
+          <div class="flex items-center justify-between space-x-1 sm:space-x-2 py-0.5 overflow-x-auto">
+            <div class="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
+              <% is_about_active = request.path.start_with?('/about') %>
+              <%# About - 연갈색 (사람 아이콘, 눌러보고 싶게) %>
+              <% about_style = is_about_active ? "background-color: #C4A373; color: white;" : "background-color: #C4A373; color: white;" %>
+              <%= link_to "👤", "/about", 
+                  class: "inline-flex items-center justify-center min-w-[2rem] px-1.5 sm:px-2 py-1 rounded-md font-semibold text-base whitespace-nowrap transition-all duration-200 shadow-sm flex-shrink-0 cursor-pointer hover:scale-110 active:scale-95", 
+                  style: about_style,
+                  title: "About",
+                  onmouseover: "this.style.backgroundColor='#B49363';",
+                  onmouseout: "this.style.backgroundColor='#C4A373';" %>
+              <%# 방명록 - 주황색 (아이콘만) %>
+              <% guestbook_style = is_guestbooks_active ? "background-color: #FF8C00; color: white;" : "background-color: #FF8C00; color: white;" %>
+              <%= link_to "📝", "/guestbooks", 
+                  class: "px-1.5 sm:px-2 py-1 rounded-md font-semibold text-[10px] sm:text-xs whitespace-nowrap transition-all shadow-sm flex-shrink-0", 
+                  style: guestbook_style,
+                  title: "방명록",
+                  onmouseover: "this.style.backgroundColor='#FF7700';",
+                  onmouseout: "this.style.backgroundColor='#FF8C00';" %>
+              <%# WHB(주식타임머신) - 갈색 (아이콘만, 눌러보고 싶게) %>
+              <% is_backtest_active = request.path.start_with?('/backtests') %>
+              <% backtest_style = is_backtest_active ? "background-color: #5D3522; color: white;" : "background-color: #6B4423; color: white;" %>
+              <%= link_to "📊", "/backtests", 
+                  class: "inline-flex items-center justify-center min-w-[2rem] px-1.5 sm:px-2 py-1 rounded-md font-semibold text-base whitespace-nowrap transition-all duration-200 shadow-sm flex-shrink-0 cursor-pointer hover:scale-110 active:scale-95", 
+                  style: backtest_style,
+                  title: "WHB(주식타임머신)",
+                  onmouseover: "this.style.backgroundColor='#5D3522';",
+                  onmouseout: "this.style.backgroundColor='#{is_backtest_active ? '#5D3522' : '#6B4423'}';" %>
+              <%# 마이뮤즈 - 보라색 계열 (음표 아이콘만, 궁금하면 누르게) %>
+              <% is_mymuse_active = request.path.start_with?('/mymuse') %>
+              <% mymuse_style = is_mymuse_active ? "background-color: #7B2CBF; color: white;" : "background-color: #9D4EDD; color: white;" %>
+              <%= link_to "🎵", "/mymuse", 
+                  class: "px-1.5 sm:px-2 py-1 rounded-md font-semibold text-[10px] sm:text-xs whitespace-nowrap transition-all shadow-sm flex-shrink-0", 
+                  style: mymuse_style,
+                  title: "마이뮤즈",
+                  onmouseover: "this.style.backgroundColor='#7B2CBF';",
+                  onmouseout: "this.style.backgroundColor='#{is_mymuse_active ? '#7B2CBF' : '#9D4EDD'}';" %>
+              <%# 기사생성기 - 녹색 (노트 필기 아이콘, 눌러보고 싶게) %>
+              <% is_articles_active = request.path.start_with?('/articles') %>
+              <% articles_style = is_articles_active ? "background-color: #16A34A; color: white;" : "background-color: #22C55E; color: white;" %>
+              <%= link_to "📝", "/articles", 
+                  class: "inline-flex items-center justify-center min-w-[2rem] px-1.5 sm:px-2 py-1 rounded-md font-semibold text-base whitespace-nowrap transition-all duration-200 shadow-sm flex-shrink-0 cursor-pointer hover:scale-110 active:scale-95", 
+                  style: articles_style,
+                  title: "기사생성기",
+                  onmouseover: "this.style.backgroundColor='#16A34A';",
+                  onmouseout: "this.style.backgroundColor='#{is_articles_active ? '#16A34A' : '#22C55E'}';" %>
+            </div>
+            <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+              <%# 방문자 수 표시 (관리자만, 오른쪽 정렬, 데스크톱만) %>
+              <% if user_signed_in? && current_user&.admin? && defined?(@total_visits) && defined?(@daily_visits) %>
+                <div class="hidden md:block text-xs text-gray-500" style="color: #9CA3AF;">
+                  <span>전체: <%= format_number_short(@total_visits || 0) %></span>
+                  <span class="mx-1">·</span>
+                  <span>오늘: <%= format_number_short(@daily_visits || 0) %></span>
+                </div>
+              <% end %>
+            </div>
+          </div>
+          <%# 두 번째 줄: 사이트맵 + 다크모드 토글 (모바일에서만 보임) %>
+          <div class="md:hidden flex items-center justify-end gap-2 py-0.5 border-t" style="border-color: var(--theme-border);">
+            <%# 사이트맵 링크 %>
+            <%= link_to "사이트맵", "/sitemap.xml", class: "text-[10px] text-xs font-semibold px-0.5 py-0.5 rounded transition flex-shrink-0", style: "color: var(--theme-text);", onmouseover: "this.style.backgroundColor='var(--theme-hover)';", onmouseout: "this.style.backgroundColor='transparent';", target: "_blank", rel: "noopener noreferrer" %>
+            <%# 다크모드 토글 버튼 (모바일용) %>
+            <button 
+              id="dark-mode-toggle-mobile"
+              type="button"
+              class="w-5 h-5 rounded-md flex items-center justify-center transition-all hover:opacity-80 flex-shrink-0"
+              style="background-color: #433E3F; color: #FAF9F6;"
+              title="다크모드 토글"
+              aria-label="다크모드 토글"
+            >
+                <svg id="dark-mode-icon-mobile" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+              </button>
+          </div>
+          <%# 모바일에서만 표시: 방문자 수 (관리자만) %>
+          <% if user_signed_in? && current_user&.admin? && defined?(@total_visits) && defined?(@daily_visits) %>
+            <div class="md:hidden flex items-center justify-end py-0.5">
+              <div class="text-xs text-gray-500 flex-shrink-0" style="color: #9CA3AF;">
+                <span>전체: <%= format_number_short(@total_visits || 0) %></span>
+                <span class="mx-1">·</span>
+                <span>오늘: <%= format_number_short(@daily_visits || 0) %></span>
+              </div>
+            </div>
+          <% end %>
+          <%# 모바일에서만 표시: 로그인/회원가입 또는 로그인한 사용자 정보 (별명수정, 관리 등, 줄바꿈) %>
+          <div class="md:hidden flex flex-wrap items-center justify-end gap-1 py-0.5">
+            <% if user_signed_in? %>
+              <span class="text-xs font-semibold" style="color: var(--theme-text);"><%= current_user.display_name %>(<%= current_user.role_display_name %>)</span>
+              <% if current_user&.admin? %>
+                <% is_admin_active = request.path.start_with?('/admin') %>
+                <% is_users_active = request.path.start_with?('/admin/users') %>
+                <% is_design_active = request.path.start_with?('/admin/design') %>
+                <% is_home_settings_active = request.path.start_with?('/admin/home') %>
+                <% is_uploads_active = request.path.start_with?('/admin/uploads') %>
+                <div class="relative inline-block">
+                  <% admin_style = "color: var(--theme-text);" + (is_admin_active ? " background-color: var(--theme-bg); border-color: var(--theme-primary);" : "") %>
+                  <button id="admin-menu-button-mobile" class="text-xs font-semibold px-0.5 py-0.5 rounded transition border-b-2 flex items-center gap-0.5" style="<%= admin_style %>" onclick="toggleAdminMenuMobile()">
+                    관리
+                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                  </button>
+                  <div id="admin-menu-mobile" class="hidden absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border z-50" style="border-color: var(--theme-border);">
+                    <% if current_user.super_admin? %>
+                      <%= link_to "/admin/home", class: "block px-4 py-2 text-sm transition #{is_home_settings_active ? 'font-semibold' : ''}", style: "color: var(--theme-text); #{is_home_settings_active ? 'background-color: var(--theme-bg);' : ''}", onmouseover: "this.style.backgroundColor='var(--theme-hover)';", onmouseout: "this.style.backgroundColor='#{is_home_settings_active ? 'var(--theme-bg)' : 'transparent'}';" do %>
+                        메인화면
+                      <% end %>
+                      <%= link_to "/admin/users", class: "block px-4 py-2 text-sm transition #{is_users_active ? 'font-semibold' : ''}", style: "color: var(--theme-text); #{is_users_active ? 'background-color: var(--theme-bg);' : ''}", onmouseover: "this.style.backgroundColor='var(--theme-hover)';", onmouseout: "this.style.backgroundColor='#{is_users_active ? 'var(--theme-bg)' : 'transparent'}';" do %>
+                        회원관리
+                      <% end %>
+                      <%= link_to "/admin/design", class: "block px-4 py-2 text-sm transition #{is_design_active ? 'font-semibold' : ''}", style: "color: var(--theme-text); #{is_design_active ? 'background-color: var(--theme-bg);' : ''}", onmouseover: "this.style.backgroundColor='var(--theme-hover)';", onmouseout: "this.style.backgroundColor='#{is_design_active ? 'var(--theme-bg)' : 'transparent'}';" do %>
+                        디자인
+                      <% end %>
+                    <% end %>
+                    <%= link_to "/admin/uploads", class: "block px-4 py-2 text-sm transition #{current_user.super_admin? ? '' : 'rounded-b-lg'} #{is_uploads_active ? 'font-semibold' : ''}", style: "color: var(--theme-text); #{is_uploads_active ? 'background-color: var(--theme-bg);' : ''}", onmouseover: "this.style.backgroundColor='var(--theme-hover)';", onmouseout: "this.style.backgroundColor='#{is_uploads_active ? 'var(--theme-bg)' : 'transparent'}';" do %>
+                      이미지 업로드
+                    <% end %>
+                  </div>
+                </div>
+                <script>
+                  function toggleAdminMenuMobile() {
+                    const menu = document.getElementById('admin-menu-mobile');
+                    menu.classList.toggle('hidden');
+                  }
+                  // 메뉴 외부 클릭 시 닫기
+                  document.addEventListener('click', function(event) {
+                    const button = document.getElementById('admin-menu-button-mobile');
+                    const menu = document.getElementById('admin-menu-mobile');
+                    if (button && menu && !button.contains(event.target) && !menu.contains(event.target)) {
+                      menu.classList.add('hidden');
+                    }
+                  });
+                </script>
+              <% end %>
+              <%# My 버튼 + 냥(코인) 표시 - 푸른색 계열 %>
+              <%= link_to "My", "/nickname/edit", class: "text-xs font-semibold px-0.5 py-0.5 rounded transition", style: "background-color: #4A90E2; color: white; display: inline-block; text-decoration: none;", onmouseover: "this.style.backgroundColor='#357ABD';", onmouseout: "this.style.backgroundColor='#4A90E2';" %>
+              <span class="text-xs font-semibold px-0.5 py-0.5 rounded" style="background-color: #E8D5B7; color: #433E3F;" title="냥 (코인)">🪙 <%= current_user.coins_display %></span>
+              <%= link_to "로그아웃", "/users/sign_out", data: { turbo_method: :delete }, class: "text-xs font-semibold px-0.5 py-0.5 rounded transition", style: "color: var(--theme-text);", onmouseover: "this.style.backgroundColor='var(--theme-hover)';", onmouseout: "this.style.backgroundColor='transparent';" %>
+            <% else %>
+              <%# 로그인 버튼 - 푸른색 계열 %>
+              <%= link_to "로그인", "/users/sign_in", class: "text-xs font-semibold px-0.5 py-0.5 rounded transition", style: "background-color: #4A90E2; color: white; display: inline-block; text-decoration: none;", onmouseover: "this.style.backgroundColor='#357ABD';", onmouseout: "this.style.backgroundColor='#4A90E2';" %>
+              <%# 회원가입 버튼 - 옅은 녹색 계열 %>
+              <%= link_to "회원가입", "/users/sign_up", class: "text-xs font-semibold px-0.5 py-0.5 rounded transition", style: "background-color: #98FB98; color: #2D5016; display: inline-block; text-decoration: none;", onmouseover: "this.style.backgroundColor='#87E887';", onmouseout: "this.style.backgroundColor='#98FB98';" %>
+              <%# 사이트맵 링크 - 회원가입 오른쪽 (모바일) %>
+              <%= link_to "사이트맵", "/sitemap.xml", class: "text-xs font-semibold px-0.5 py-0.5 rounded transition", style: "color: var(--theme-text);", onmouseover: "this.style.backgroundColor='var(--theme-hover)';", onmouseout: "this.style.backgroundColor='transparent';", target: "_blank", rel: "noopener noreferrer" %>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="flex flex-1 overflow-x-hidden">
+      <main class="flex-1 w-full max-w-full mx-auto py-1 sm:py-2 px-1 sm:px-2" style="max-width: 1280px;">
+        <%= yield %>
+      </main>
+      
+      <%# 사이드바 (넓은 화면에서만 표시, 게시판 페이지에서만) %>
+      <% if request.path.start_with?('/posts') %>
+      <aside id="sidebar" class="hidden xl:block w-80 bg-white border-l-2" style="border-color: var(--theme-border); position: sticky; align-self: flex-start;">
+        <%# Fragment 캐싱: 카테고리별로 캐시 키 생성 %>
+        <% cache_key = "sidebar_content_#{params[:category] || 'default'}_#{Post.maximum(:id) || 0}_#{Post.maximum(:updated_at)&.to_i}" %>
+        <% cache cache_key, expires_in: 15.minutes do %>
+          <div class="p-4 space-y-3">
+            <%# 카테고리 네비게이션 (Dropdown 방식) - 맨 위로 이동 %>
+            <div>
+              <h3 class="text-base font-bold mb-2" style="color: var(--theme-text);">카테고리 바로가기</h3>
+              <div class="relative">
+                <% categories = ["주식", "문화", "출판", "Rails", "자유게시판", "생각들"] %>
+                <% current_category = params[:category] || "주식" %>
+                <button 
+                  id="category-dropdown-button" 
+                  class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-semibold transition category-dropdown-button"
+                  style="background-color: var(--theme-primary); color: white;"
+                  onclick="toggleCategoryDropdown()"
+                >
+                  <span><%= current_category %></span>
+                  <svg class="w-4 h-4 transition-transform" id="category-dropdown-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                  </svg>
+                </button>
+                <div id="category-dropdown-menu" class="hidden absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border z-50 category-dropdown-menu" style="border-color: var(--theme-border);">
+                  <nav class="py-1">
+                    <% categories.each do |category| %>
+                      <% if category != current_category %>
+                        <%= link_to "/posts?category=#{CGI.escape(category)}", 
+                            class: "block px-3 py-2 text-sm transition category-dropdown-item",
+                            style: "color: var(--theme-text);",
+                            onmouseover: "this.style.backgroundColor='var(--theme-hover)';",
+                            onmouseout: "this.style.backgroundColor='transparent';" do %>
+                          <%= category %>
+                        <% end %>
+                      <% end %>
+                    <% end %>
+                  </nav>
+                </div>
+              </div>
+            </div>
+
+            <%# 최신 글 (먼저 표시) %>
+            <div>
+              <h3 class="text-base font-bold mb-2 sidebar-section-title">최신 글</h3>
+              <div class="space-y-1.5">
+                <% @recent_posts.each do |post| %>
+                  <%= link_to post_path(post), class: "block" do %>
+                    <div class="px-3 py-1.5 rounded-lg transition truncate" style="background-color: var(--theme-bg);" title="<%= post.title %>" onmouseover="this.style.backgroundColor='var(--theme-hover)';" onmouseout="this.style.backgroundColor='var(--theme-bg)';">
+                      <p class="text-sm text-gray-800 truncate"><%= post.title %></p>
+                    </div>
+                  <% end %>
+                <% end %>
+              </div>
+            </div>
+
+            <%# 인기 글 (나중에 표시) %>
+            <div>
+              <h3 class="text-base font-bold mb-2 sidebar-section-title">인기 글</h3>
+              <div class="space-y-1.5">
+                <% @popular_posts.each do |post| %>
+                  <%# N+1 쿼리 방지: slug가 이미 로드되어 있으므로 to_param에서 추가 쿼리 없음 %>
+                  <% post.instance_variable_set(:@_skip_slug_generation, true) if post.slug.blank? %>
+                  <%= link_to post_path(post), class: "block" do %>
+                    <div class="px-3 py-1.5 rounded-lg transition truncate" style="background-color: var(--theme-bg);" title="<%= post.title %>" onmouseover="this.style.backgroundColor='var(--theme-hover)';" onmouseout="this.style.backgroundColor='var(--theme-bg)';">
+                      <p class="text-sm text-gray-800 truncate"><%= post.title %></p>
+                      <p class="text-xs text-gray-500 mt-0.5">조회수: <%= format_number_short(post.views_count || 0) %></p>
+                    </div>
+                  <% end %>
+                <% end %>
+              </div>
+            </div>
+          </div>
+          
+          <script>
+            function toggleCategoryDropdown() {
+              const menu = document.getElementById('category-dropdown-menu');
+              const arrow = document.getElementById('category-dropdown-arrow');
+              menu.classList.toggle('hidden');
+              arrow.classList.toggle('rotate-180');
+            }
+            
+            // 메뉴 외부 클릭 시 닫기
+            document.addEventListener('click', function(event) {
+              const button = document.getElementById('category-dropdown-button');
+              const menu = document.getElementById('category-dropdown-menu');
+              if (button && menu && !button.contains(event.target) && !menu.contains(event.target)) {
+                menu.classList.add('hidden');
+                document.getElementById('category-dropdown-arrow')?.classList.remove('rotate-180');
+              }
+            });
+            
+          </script>
+        <% end %>
+      </aside>
+      <% end %>
+      
+      <%# 사이드바 sticky 위치 조정 스크립트 (캐시 밖) %>
+      <script>
+        // 사이드바 sticky 위치 동적 조정
+        function updateSidebarPosition() {
+          const sidebar = document.getElementById('sidebar');
+          const nav = document.querySelector('nav');
+          if (sidebar && nav) {
+            const navHeight = nav.offsetHeight;
+            sidebar.style.top = navHeight + 'px';
+          }
+        }
+        
+        // 페이지 로드 시 및 리사이즈 시 실행
+        function initSidebarPosition() {
+          const sidebar = document.getElementById('sidebar');
+          if (sidebar) {
+            // 즉시 실행
+            updateSidebarPosition();
+            // 이벤트 리스너 등록
+            window.addEventListener('resize', updateSidebarPosition);
+            // Turbo 이벤트도 처리 (Rails 7+)
+            document.addEventListener('turbo:load', updateSidebarPosition);
+            document.addEventListener('turbo:render', updateSidebarPosition);
+          }
+        }
+        
+        // DOMContentLoaded 또는 즉시 실행
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', initSidebarPosition);
+        } else {
+          initSidebarPosition();
+        }
+      </script>
+    </div>
+
+    <%# 푸터 영역 %>
+    <footer class="bg-white border-t-2 mt-auto" style="border-color: var(--theme-border);">
+      <div class="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+          <%# 공개정보 섹션 %>
+          <div>
+            <h3 class="text-sm sm:text-base font-bold mb-3 sm:mb-4" style="color: #433E3F;">공개정보</h3>
+            <div class="text-xs sm:text-sm text-gray-600 space-y-2">
+              <p>Charlie K</p> 
+            </div>
+          </div>
+
+          <%# 연락처 섹션 %>
+          <div>
+            <h3 class="text-sm sm:text-base font-bold mb-3 sm:mb-4" style="color: #433E3F;">연락처</h3>
+            <div class="text-xs sm:text-sm text-gray-600">
+              <% email_link_style = "color: #433E3F;" %>
+              <% email_link_hover_in = "this.style.color='#D4A373';" %>
+              <% email_link_hover_out = "this.style.color='#433E3F';" %>
+              <a href="mailto:skytreesea@gmail.com" style="<%= email_link_style %>" onmouseover="<%= email_link_hover_in %>" onmouseout="<%= email_link_hover_out %>" class="hover:underline">
+                skytreesea@gmail.com
+              </a>
+            </div>
+          </div>
+
+          <%# 저작권 섹션 %>
+          <div>
+            <h3 class="text-sm sm:text-base font-bold mb-3 sm:mb-4" style="color: #433E3F;">저작권</h3>
+            <div class="text-xs sm:text-sm text-gray-600">
+              <p>&copy; <%= Date.current.year %> Charlie K</p>
+              <p class="mt-1">All rights reserved.</p>
+            </div>
+          </div>
+        </div>
+
+        <%# 하단 구분선 및 추가 정보 %>
+        <div class="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t" style="border-color: var(--theme-border);">
+          <div class="flex flex-col sm:flex-row justify-between items-center gap-2 text-xs text-gray-500">
+            <p>© <%= Date.current.year %> Charlie K. All rights reserved.</p>
+            <div class="flex gap-2">
+              <%= link_to "개인정보처리방침", privacy_policy_path, class: "hover:underline", style: "color: #6B7280;", onmouseover: "this.style.color='#D4A373';", onmouseout: "this.style.color='#6B7280';" %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+    
+    <%# 다크모드 토글 스크립트 %>
+    <script>
+      (function() {
+        // 다크모드 상태 확인 및 적용
+        function initDarkMode() {
+          const savedTheme = localStorage.getItem('theme');
+          // 기본값을 다크모드로 설정 (저장된 테마가 없으면 다크모드)
+          const isDark = savedTheme === 'light' ? false : true;
+          
+          if (isDark) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            updateDarkModeIcon(true);
+            applyDarkModeStyles();
+            // 저장된 테마가 없으면 다크모드로 저장
+            if (!savedTheme) {
+              localStorage.setItem('theme', 'dark');
+            }
+          } else {
+            document.documentElement.removeAttribute('data-theme');
+            updateDarkModeIcon(false);
+            removeDarkModeStyles();
+          }
+        }
+        
+        // 다크모드 아이콘 업데이트
+        function updateDarkModeIcon(isDark) {
+          // 데스크톱 아이콘 업데이트
+          const icon = document.getElementById('dark-mode-icon');
+          if (icon) {
+            if (isDark) {
+              // 달 아이콘 (다크모드 활성화 시)
+              icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />';
+            } else {
+              // 태양 아이콘 (라이트모드 시)
+              icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />';
+            }
+          }
+          
+          // 모바일 아이콘 업데이트
+          const iconMobile = document.getElementById('dark-mode-icon-mobile');
+          if (iconMobile) {
+            if (isDark) {
+              // 달 아이콘 (다크모드 활성화 시)
+              iconMobile.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />';
+            } else {
+              // 태양 아이콘 (라이트모드 시)
+              iconMobile.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />';
+            }
+          }
+        }
+        
+        // 인라인 스타일이 있는 요소들에 다크모드 적용
+        function applyDarkModeStyles() {
+          // 모든 요소를 순회하며 인라인 스타일 강제 적용
+          const allElements = document.querySelectorAll('*');
+          
+          allElements.forEach(el => {
+            const style = el.style;
+            const bgColor = style.backgroundColor;
+            const textColor = style.color;
+            const borderColor = style.borderColor;
+            const styleAttr = el.getAttribute('style') || '';
+            const classList = el.classList;
+            
+            // 게시판 영역인지 확인
+            const isPostBoard = classList.contains('bg-white') && 
+                               (el.closest('.bg-white.rounded-xl') !== null ||
+                                el.closest('[class*="post"]') !== null ||
+                                (styleAttr.includes('background-color: white') && el.closest('.max-w-5xl') !== null));
+            
+            // 주식 타임머신 사용법 안내 영역인지 확인
+            const isBacktestGuide = classList.contains('bg-gradient-to-r') && 
+                                   (classList.contains('from-blue-50') || classList.contains('to-indigo-50')) ||
+                                   el.closest('.bg-gradient-to-r.from-blue-50') !== null ||
+                                   el.closest('.bg-gradient-to-r.from-indigo-50') !== null;
+            
+            // 주식 타임머신 사용법 안내 내부 상자인지 확인
+            const isBacktestGuideBox = classList.contains('bg-white') && 
+                                      (el.closest('.bg-gradient-to-r.from-blue-50') !== null ||
+                                       el.closest('.bg-gradient-to-r.from-indigo-50') !== null);
+            
+            // 경고 상자인지 확인
+            const isWarningBox = classList.contains('bg-yellow-50');
+            
+            // 배경색 처리
+            if (bgColor && (
+              bgColor.includes('#FFFFFF') || 
+              bgColor.includes('#FAF9F6') ||
+              bgColor.includes('rgb(255, 255, 255)') ||
+              bgColor.includes('rgb(250, 249, 246)')
+            )) {
+              if (!el.dataset.darkModeOriginalBg) {
+                el.dataset.darkModeOriginalBg = bgColor;
+              }
+              // 영역별로 다른 브라운톤 적용
+              let darkBg = '#2d2d2d'; // 기본 회색톤
+              if (isPostBoard) {
+                darkBg = '#3a2e22'; // 게시판 브라운톤
+              } else if (isBacktestGuideBox) {
+                darkBg = '#4a3d30'; // 사용법 안내 내부 상자 (약간 밝은 브라운톤)
+              } else if (isBacktestGuide) {
+                darkBg = '#3a2e22'; // 사용법 안내 컨테이너 (어두운 브라운톤)
+              }
+              el.style.setProperty('background-color', darkBg, 'important');
+            }
+            
+            // 그라디언트 배경 처리 (주식 타임머신 사용법 안내)
+            if (isBacktestGuide && (!bgColor || bgColor === 'transparent' || bgColor === 'rgba(0, 0, 0, 0)')) {
+              if (!el.dataset.darkModeOriginalBg) {
+                el.dataset.darkModeOriginalBg = el.style.background || el.style.backgroundColor || '';
+              }
+              el.style.setProperty('background', '#3a2e22', 'important');
+              el.style.setProperty('background-color', '#3a2e22', 'important');
+            }
+            
+            // 경고 상자 처리
+            if (isWarningBox) {
+              if (!el.dataset.darkModeOriginalBg) {
+                el.dataset.darkModeOriginalBg = bgColor || el.style.background || '';
+              }
+              el.style.setProperty('background-color', '#4d3e2a', 'important');
+              el.style.setProperty('background', '#4d3e2a', 'important');
+            }
+            
+            // 텍스트 색상 처리
+            if (textColor && (
+              textColor.includes('#433E3F') ||
+              textColor.includes('#9CA3AF') ||
+              textColor.includes('#6B7280') ||
+              textColor.includes('rgb(67, 62, 63)') ||
+              textColor.includes('rgb(156, 163, 175)')
+            )) {
+              if (!el.dataset.darkModeOriginalColor) {
+                el.dataset.darkModeOriginalColor = textColor;
+              }
+              el.style.setProperty('color', '#e5e5e5', 'important');
+            }
+            
+            // 테두리 색상 처리
+            if (borderColor && borderColor.includes('#D4A373')) {
+              if (!el.dataset.darkModeOriginalBorder) {
+                el.dataset.darkModeOriginalBorder = borderColor;
+              }
+              el.style.setProperty('border-color', 'rgba(212, 163, 115, 0.3)', 'important');
+            }
+          });
+          
+          // body와 html의 배경색 강제 설정
+          document.body.style.setProperty('background-color', '#1a1a1a', 'important');
+          document.documentElement.style.setProperty('background-color', '#1a1a1a', 'important');
+          document.body.style.setProperty('color', '#e5e5e5', 'important');
+        }
+        
+        // 다크모드 스타일 제거
+        function removeDarkModeStyles() {
+          // 원래 스타일 복원
+          document.querySelectorAll('[data-dark-mode-original-bg]').forEach(el => {
+            el.style.setProperty('background-color', el.dataset.darkModeOriginalBg || '', 'important');
+            delete el.dataset.darkModeOriginalBg;
+          });
+          
+          document.querySelectorAll('[data-dark-mode-original-color]').forEach(el => {
+            el.style.setProperty('color', el.dataset.darkModeOriginalColor || '', 'important');
+            delete el.dataset.darkModeOriginalColor;
+          });
+          
+          document.querySelectorAll('[data-dark-mode-original-border]').forEach(el => {
+            el.style.setProperty('border-color', el.dataset.darkModeOriginalBorder || '', 'important');
+            delete el.dataset.darkModeOriginalBorder;
+          });
+          
+          // 호버 이벤트 복원
+          document.querySelectorAll('[data-dark-mode-original-hover]').forEach(el => {
+            el.setAttribute('onmouseover', el.dataset.darkModeOriginalHover || '');
+            delete el.dataset.darkModeOriginalHover;
+          });
+          
+          document.querySelectorAll('[data-dark-mode-original-out]').forEach(el => {
+            el.setAttribute('onmouseout', el.dataset.darkModeOriginalOut || '');
+            delete el.dataset.darkModeOriginalOut;
+          });
+          
+          // body와 html의 배경색 제거
+          document.body.style.removeProperty('background-color');
+          document.documentElement.style.removeProperty('background-color');
+          document.body.style.removeProperty('color');
+        }
+        
+        // 다크모드 토글
+        function toggleDarkMode() {
+          const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+          
+          if (isDark) {
+            document.documentElement.removeAttribute('data-theme');
+            localStorage.setItem('theme', 'light');
+            updateDarkModeIcon(false);
+            removeDarkModeStyles();
+          } else {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            localStorage.setItem('theme', 'dark');
+            updateDarkModeIcon(true);
+            applyDarkModeStyles();
+          }
+        }
+        
+        // 페이지 로드 시 다크모드 초기화
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', initDarkMode);
+        } else {
+          initDarkMode();
+        }
+        
+        // Turbo 이벤트 리스너 (Turbo로 페이지 전환 시에도 다크모드 유지)
+        document.addEventListener('turbo:load', function() {
+          const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+          if (isDark) {
+            applyDarkModeStyles();
+          }
+        });
+        
+        // 다크모드 토글 버튼 이벤트 리스너 (데스크톱)
+        const toggleButton = document.getElementById('dark-mode-toggle');
+        if (toggleButton) {
+          toggleButton.addEventListener('click', toggleDarkMode);
+        }
+        
+        // 다크모드 토글 버튼 이벤트 리스너 (모바일)
+        const toggleButtonMobile = document.getElementById('dark-mode-toggle-mobile');
+        if (toggleButtonMobile) {
+          toggleButtonMobile.addEventListener('click', toggleDarkMode);
+        }
+        
+        // 시스템 테마 변경 감지 (선택사항)
+        if (window.matchMedia) {
+          window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+            if (!localStorage.getItem('theme')) {
+              initDarkMode();
+            }
+          });
+        }
+      })();
+    </script>
+    <%# 회원가입 직후 10냥 환영 팝업 (확인 누르면 이미 메인에 있음) %>
+    <% if flash[:welcome_coins] %>
+      <script>
+        (function() {
+          alert("축하합니다. 마이뮤즈, 기사생성기를 이용할 수 있는 10냥의 코인이 무료로 주어집니다. 지금 한 번 이용해보세요.");
+        })();
+      </script>
+    <% end %>
+  </body>
+</html>

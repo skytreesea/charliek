@@ -1,0 +1,16 @@
+<%# Sitemap Index 구조 (글 수가 많을 때 사용) %>
+<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap>
+    <loc><%= @base_url %>/sitemap/pages.xml</loc>
+    <lastmod><%= Date.current.iso8601 %></lastmod>
+  </sitemap>
+  <%# 글 수에 따라 여러 sitemap으로 분할 %>
+  <% total_pages = (@posts_count.to_f / 50_000).ceil %>
+  <% total_pages.times do |page| %>
+    <sitemap>
+      <loc><%= @base_url %>/sitemap/posts.xml?page=<%= page %></loc>
+      <lastmod><%= Date.current.iso8601 %></lastmod>
+    </sitemap>
+  <% end %>
+</sitemapindex>

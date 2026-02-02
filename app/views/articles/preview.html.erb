@@ -1,0 +1,71 @@
+<div class="max-w-6xl mx-auto px-2 sm:px-3 py-8">
+  <%# 재생성 시 1냥 사용 안내: 확인 누른 후 미리보기 확인 %>
+  <% if defined?(@coin_used) && @coin_used %>
+    <script>
+      (function() { alert("1냥이 사용되었습니다."); })();
+    </script>
+  <% end %>
+  <div class="mb-4 p-4 bg-amber-50 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 rounded-lg border border-amber-200 dark:border-amber-800">
+    <p class="font-semibold">미리보기</p>
+    <p class="text-sm mt-1">아래 내용을 확인한 뒤 저장하거나, 새 기사 작성으로 돌아가 수정할 수 있습니다.</p>
+  </div>
+
+  <article class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-700 mb-8">
+    <header class="mb-6">
+      <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-4"><%= @article.title %></h1>
+
+      <% if @article.keywords.present? %>
+        <div class="flex flex-wrap gap-2 mb-4">
+          <% @article.keywords.to_s.split(/,/).map(&:strip).reject(&:blank?).each do |keyword| %>
+            <span class="px-3 py-1 bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-200 dark:border dark:border-blue-700 text-sm rounded-full"><%= keyword %></span>
+          <% end %>
+        </div>
+      <% end %>
+    </header>
+
+    <div class="prose prose-lg max-w-none mb-8 article-content">
+      <%= markdown(@article.content) %>
+    </div>
+
+    <% if @article.prompt_used.present? %>
+      <div class="mt-6 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
+        <h3 class="font-semibold text-gray-700 dark:text-gray-300 mb-3">프롬프트 수정 및 재생성</h3>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">프롬프트를 수정한 후 [기사 재생성] 버튼을 누르면 수정된 프롬프트로 기사가 다시 생성됩니다.</p>
+        
+        <%= form_with scope: :article, url: articles_path, method: :post, local: true, class: "space-y-4", data: { controller: "article-regenerate" } do |f| %>
+          <%= hidden_field_tag :regenerate, "1" %>
+          <%= f.hidden_field :keywords, value: @article.keywords %>
+          <%= f.hidden_field :writing_style, value: @article.writing_style || "official" %>
+          <%= f.hidden_field :selected_title, value: @article.title %>
+          
+          <div>
+            <%= f.label :prompt_used, "프롬프트", class: "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" %>
+            <%= f.text_area :prompt_used, 
+                value: @article.prompt_used,
+                rows: 8,
+                class: "w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm" %>
+          </div>
+          
+          <div class="flex gap-3">
+            <%= f.submit "기사 재생성", class: "px-6 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition cursor-pointer", data: { article_regenerate_target: "regenerateBtn" } %>
+            <span class="text-sm text-gray-500 dark:text-gray-400 self-center">재생성 시 기사 본문만 새로 생성됩니다.</span>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </article>
+
+  <%= form_with scope: :article, url: articles_path, method: :post, local: true, class: "space-y-4" do |f| %>
+    <%= hidden_field_tag :save_preview, "1" %>
+    <%= f.hidden_field :title, value: @article.title %>
+    <%= f.hidden_field :content, value: @article.content %>
+    <%= f.hidden_field :keywords, value: @article.keywords %>
+    <%= f.hidden_field :prompt_used, value: @article.prompt_used %>
+
+    <div class="flex gap-4">
+      <%= f.submit "저장하기", class: "px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition cursor-pointer" %>
+      <%= link_to "새 기사 작성으로 돌아가기", new_article_path, class: "px-6 py-3 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition" %>
+      <%= link_to "목록으로", articles_path, class: "px-6 py-3 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200" %>
+    </div>
+  <% end %>
+</div>
