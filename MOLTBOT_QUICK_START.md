@@ -6,8 +6,12 @@
 Windows에서 WSL Ubuntu 터미널을 엽니다.
 
 ### Step 2: 설치 스크립트 실행
+
+**프로젝트 루트 디렉터리에서** 다음을 실행하세요:
+
 ```bash
-cd ~/projects/charliek
+# 프로젝트 루트로 이동 (git이 있는 경우)
+cd "$(git rev-parse --show-toplevel)"
 bash install_clawdbot.sh
 ```
 

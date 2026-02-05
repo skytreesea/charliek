@@ -2,10 +2,13 @@
 
 ## 1. Fly.io에 도메인 추가
 
-터미널에서 다음 명령어를 실행하세요:
+터미널에서 **프로젝트 루트 디렉터리**로 이동한 뒤 다음 명령어를 실행하세요:
 
 ```bash
-cd /home/kch/projects/charliek
+# 프로젝트 루트로 이동 (git이 있는 경우)
+cd "$(git rev-parse --show-toplevel)"
+# 또는: cd <프로젝트를 clone한 경로>
+
 fly certs add charliek.kr
 ```
 

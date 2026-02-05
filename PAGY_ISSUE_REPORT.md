@@ -50,8 +50,9 @@ gem "pagy"
 **오류 메시지**:
 ```
 LoadError: cannot load such file -- pagy/backend (LoadError)
-/home/kch/projects/charliek/config/application.rb:4:in `<main>'
+config/application.rb:4:in `<main>'
 ```
+(실제 환경에서는 앞에 절대경로가 붙어 출력될 수 있습니다.)
 
 **원인**: `pagy/backend`라는 별도 파일이 존재하지 않음.
 

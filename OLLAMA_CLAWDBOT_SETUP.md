@@ -9,8 +9,11 @@ API 키 없이 **완전 무료**, 한도 제한 없이 쓸 수 있습니다.
 
 ### 방법 A: 설치 스크립트 (권장)
 
+**프로젝트 루트 디렉터리에서** 다음을 실행하세요:
+
 ```bash
-cd ~/projects/charliek
+# 프로젝트 루트로 이동 (git이 있는 경우)
+cd "$(git rev-parse --show-toplevel)"
 bash install_ollama_clawdbot.sh
 ```
 
